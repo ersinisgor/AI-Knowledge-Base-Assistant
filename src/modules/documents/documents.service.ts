@@ -1,0 +1,68 @@
+import { Injectable } from '@nestjs/common';
+import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
+import { CreateDocumentDto } from './dto/create-document.dto';
+import { DocumentResponseDto } from './dto/document-response.dto';
+
+interface DocumentRow {
+  id: string;
+  content: string;
+  source_type: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+@Injectable()
+export class DocumentsService {
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  async create(
+    createDocumentDto: CreateDocumentDto,
+  ): Promise<DocumentResponseDto> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('documents')
+      .insert({
+        content: createDocumentDto.content,
+        source_type: createDocumentDto.source_type,
+        metadata: createDocumentDto.metadata || {},
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create document: ${error.message}`);
+    }
+
+    const documentData = data as DocumentRow;
+
+    return {
+      id: documentData.id,
+      content: documentData.content,
+      source_type: documentData.source_type,
+      metadata: documentData.metadata,
+      created_at: documentData.created_at,
+    };
+  }
+
+  async findAll(): Promise<DocumentResponseDto[]> {
+    const supabase = this.supabaseService.getClient();
+
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch documents: ${error.message}`);
+    }
+
+    return (data as DocumentRow[]).map((doc) => ({
+      id: doc.id,
+      content: doc.content,
+      source_type: doc.source_type,
+      metadata: doc.metadata,
+      created_at: doc.created_at,
+    }));
+  }
+}
