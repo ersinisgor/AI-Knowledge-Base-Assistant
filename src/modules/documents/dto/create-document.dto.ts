@@ -13,7 +13,7 @@ export class CreateDocumentDto {
 
   @IsString()
   @IsEnum(['pdf', 'markdown', 'slack', 'github'])
-  source_type: string;
+  source_type: 'pdf' | 'markdown' | 'slack' | 'github';
 
   @IsOptional()
   @IsObject()

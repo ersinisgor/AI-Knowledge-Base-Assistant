@@ -11,7 +11,7 @@ import { SupabaseService } from './supabase.service';
 export class SupabaseModule {
   static register() {
     return {
-      module: SupabaseModule,
+      module: [SupabaseModule],
       imports: [ConfigModule],
       providers: [SupabaseService],
       exports: [SupabaseService],

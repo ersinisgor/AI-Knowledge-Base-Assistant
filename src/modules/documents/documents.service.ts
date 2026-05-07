@@ -25,7 +25,7 @@ export class DocumentsService {
       .insert({
         content: createDocumentDto.content,
         source_type: createDocumentDto.source_type,
-        metadata: createDocumentDto.metadata || {},
+        metadata: (createDocumentDto.metadata || {}) as Record<string, unknown> as any,
       })
       .select()
       .single();
