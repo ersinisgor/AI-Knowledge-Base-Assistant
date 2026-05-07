@@ -10,13 +10,19 @@ export class SupabaseService {
 
   constructor(private readonly configService: ConfigService) {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseKey = this.configService.get<string>('SUPABASE_ANON_KEY');
+    const supabaseKey = this.configService.get<string>(
+      'SUPABASE_PUBLISHABLE_KEY',
+    );
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and ANON_KEY must be provided');
+      throw new Error('Supabase URL and PUBLISHABLE_KEY must be provided');
     }
 
     this.client = createClient(supabaseUrl, supabaseKey);
+    // this.client = createClient(
+    //   'https://vnmdkdqllaevccjsnbhx.supabase.co',
+    //   'sb_publishable_0bJox7ZU7aKRvG2fXnUhyA_AcyERj-3',
+    // );
   }
 
   getClient(): SupabaseClientAny {
