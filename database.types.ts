@@ -14,6 +14,74 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_sessions: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          title: string | null;
+          metadata: Json;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          title?: string | null;
+          metadata?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string | null;
+          title?: string | null;
+          metadata?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          role: string;
+          content: string;
+          sources: Json | null;
+          metadata: Json;
+          tokens_used: number | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          role: string;
+          content: string;
+          sources?: Json | null;
+          metadata?: Json;
+          tokens_used?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          role?: string;
+          content?: string;
+          sources?: Json | null;
+          metadata?: Json;
+          tokens_used?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       chat_history: {
         Row: {
           id: string;
@@ -102,7 +170,20 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      match_documents: {
+        Args: {
+          query_embedding: string;
+          match_count?: number;
+          filter?: Json;
+        };
+        Returns: {
+          id: string;
+          document_id: string;
+          content: string;
+          metadata: Json;
+          similarity: number;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

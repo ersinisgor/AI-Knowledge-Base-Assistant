@@ -32,7 +32,7 @@ describe('VectorRetrieverService', () => {
     const result = await service.retrieve(fakeEmbedding, {}, 5);
 
     expect(mockRpc).toHaveBeenCalledWith('match_documents', {
-      query_embedding: fakeEmbedding,
+      query_embedding: `[${fakeEmbedding.join(',')}]`,
       match_count: 5,
       filter: {},
     });
@@ -53,7 +53,7 @@ describe('VectorRetrieverService', () => {
     await service.retrieve([0.1], { source_type: 'pdf' }, 3);
 
     expect(mockRpc).toHaveBeenCalledWith('match_documents', {
-      query_embedding: [0.1],
+      query_embedding: '[0.1]',
       match_count: 3,
       filter: { source_type: 'pdf' },
     });

@@ -23,7 +23,7 @@ export class VectorRetrieverService implements IRetrieverStrategy {
     const { data, error } = await this.supabaseService
       .getClient()
       .rpc('match_documents', {
-        query_embedding: embedding,
+        query_embedding: `[${embedding.join(',')}]`,
         match_count: topK,
         filter: supabaseFilter,
       });
