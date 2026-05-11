@@ -84,34 +84,28 @@ Supabase (PostgreSQL)
 
 ---
 
-## 📂 Project Structure (Current)
-
-src/
-├── modules/
-│ ├── documents/
-│ ├── chat/
-│ ├── ingestion/
-│
-├── lib/
-│ └── supabase.client.ts
-│
-├── config/
-├── main.ts
-
----
-
 ## 🚀 Current Status
 
-🔹 Phase 1: Backend Foundation (In Progress)
-
-Implemented / Planned:
+### ✅ Phase 1: Backend Foundation (Completed)
 
 - [x] Project setup (NestJS)
 - [x] Supabase connection
 - [x] Basic module structure
-- [ ] Document APIs
-- [ ] Chat API (basic)
-- [ ] Ingestion (basic)
+- [x] Document APIs
+- [x] Chat API (basic)
+- [x] Ingestion (basic)
+
+### ✅ Phase 2: Vector Preparation Layer (Completed)
+
+- [x] Supabase typed client with Database schema
+- [x] Database migrations (documents, document_chunks, chat_history tables)
+- [x] Generated TypeScript types from Supabase schema
+- [x] Text cleaning and normalization (DocumentCleaner)
+- [x] Text chunking with overlap using LangChain (TextChunker)
+- [x] OpenAI embedding generation (OpenAIEmbeddingsService)
+- [x] Full ingestion pipeline (clean → chunk → embed → store)
+- [x] Ingestion endpoints (POST /ingestion/process, POST /ingestion/upload)
+- [x] Document chunk storage with vector embeddings in Supabase
 
 ---
 
@@ -127,30 +121,6 @@ Implemented / Planned:
 
 ---
 
-## 💡 Why This Project?
-
-Most AI tutorials focus only on simple demos.
-
-This project is different:
-
-- It simulates a **real internal company system**
-- Uses **multiple data sources**
-- Follows **production-grade architecture**
-- Focuses on **backend + AI engineering**
-
----
-
-## 🧑‍💻 Development Approach
-
-This project is built:
-
-- step-by-step in phases
-- with clean architecture principles
-- with junior-friendly but scalable code
-- focusing on real-world engineering practices
-
----
-
 ## 📌 Notes
 
 This README is temporary and will be expanded as the project evolves.
@@ -163,9 +133,3 @@ This README is temporary and will be expanded as the project evolves.
 - Advanced retrieval (reranking, hybrid search)
 - Evaluation system (RAG quality metrics)
 - Frontend interface
-
----
-
-## 📬 Contact
-
-This project is being developed as part of a learning journey into **AI Engineering and Backend Development**.
