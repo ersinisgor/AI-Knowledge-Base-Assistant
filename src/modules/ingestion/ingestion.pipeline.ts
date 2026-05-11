@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
 import { DocumentCleaner } from './processors/document-cleaner';
 import { TextChunker, Chunk } from './chunking/text-chunker';
-import { OpenAIEmbeddingsService } from './embeddings/openai-embeddings';
+import { EmbeddingsService } from '../../infrastructure/embeddings/embeddings.service';
 
 /**
  * Input for document ingestion.
@@ -52,7 +52,7 @@ export class IngestionPipeline {
     private readonly supabaseService: SupabaseService,
     private readonly cleaner: DocumentCleaner,
     private readonly chunker: TextChunker,
-    private readonly embeddings: OpenAIEmbeddingsService,
+    private readonly embeddings: EmbeddingsService,
   ) {}
 
   /**
@@ -104,7 +104,7 @@ export class IngestionPipeline {
     // Step 4: Generate embeddings
     this.logger.debug('Step 4: Generating embeddings');
     const chunkTexts = chunks.map((c) => c.content);
-    const embeddingVectors = await this.embeddings.generate(chunkTexts);
+    const embeddingVectors = await this.embeddings.embedBatch(chunkTexts);
     this.logger.debug(`Generated ${embeddingVectors.length} embedding(s)`);
 
     // Step 5: Store chunks with embeddings
