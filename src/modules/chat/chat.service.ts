@@ -1,44 +1,108 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
+import { RagPipelineService } from '../rag/rag-pipeline.service';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { ChatResponseDto } from './dto/chat-response.dto';
+import { ChatMessage } from '../../infrastructure/llm/providers/llm-provider.interface';
 
-interface ChatHistoryRow {
+interface SessionRow {
   id: string;
-  user_message: string;
-  ai_response: string;
+  title: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MessageRow {
+  id: string;
+  session_id: string;
+  role: string;
+  content: string;
+  sources: Record<string, unknown>[] | null;
+  metadata: Record<string, unknown>;
+  tokens_used: number | null;
   created_at: string;
 }
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly supabaseService: SupabaseService) {}
+  private readonly logger = new Logger(ChatService.name);
 
-  async sendMessage(chatMessageDto: ChatMessageDto): Promise<ChatResponseDto> {
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly ragPipeline: RagPipelineService,
+  ) {}
+
+  async handleMessage(dto: ChatMessageDto): Promise<ChatResponseDto> {
     const supabase = this.supabaseService.getClient();
 
-    const aiResponse =
-      'This is a placeholder AI response. RAG integration coming in Phase 2.';
+    // 1. Get or create session
+    let sessionId = dto.session_id;
+    if (!sessionId) {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .insert({ title: dto.message.slice(0, 50) })
+        .select()
+        .single();
 
-    const { data, error } = await supabase
-      .from('chat_history')
-      .insert({
-        user_message: chatMessageDto.message,
-        ai_response: aiResponse,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to save chat history: ${error.message}`);
+      if (error) {
+        throw new Error(`Failed to create session: ${error.message}`);
+      }
+      sessionId = (data as SessionRow).id;
     }
 
-    const chatData = data as ChatHistoryRow;
+    // 2. Store user message
+    await supabase.from('messages').insert({
+      session_id: sessionId,
+      role: 'user',
+      content: dto.message,
+    });
 
+    // 3. Load recent message history (last 10)
+    const { data: historyData } = await supabase
+      .from('messages')
+      .select('role, content')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    const history: ChatMessage[] = (
+      (historyData as Pick<MessageRow, 'role' | 'content'>[] || [])
+    )
+      .reverse()
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+    // 4. Run RAG pipeline
+    const pipelineResult = await this.ragPipeline.query({
+      question: dto.message,
+      history,
+      topK: 5,
+    });
+
+    // 5. Store assistant response
+    await supabase.from('messages').insert({
+      session_id: sessionId,
+      role: 'assistant',
+      content: pipelineResult.answer,
+      sources: pipelineResult.sources as unknown as import('database.types').Json,
+      tokens_used: pipelineResult.tokensUsed,
+      metadata: {
+        pipeline_metrics: pipelineResult.metrics,
+        retrieval_confidence: pipelineResult.retrievalConfidence,
+      },
+    });
+
+    // 6. Return response
     return {
-      user_message: chatMessageDto.message,
-      ai_response: aiResponse,
-      chat_id: chatData.id,
+      answer: pipelineResult.answer,
+      sources: pipelineResult.sources,
+      session_id: sessionId,
+      tokens_used: pipelineResult.tokensUsed,
+      retrieval_confidence: pipelineResult.retrievalConfidence,
     };
   }
 }
