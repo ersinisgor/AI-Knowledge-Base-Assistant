@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { SupabaseModule } from '../../infrastructure/supabase/supabase.module';
+import { RagModule } from '../rag/rag.module';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, RagModule],
   controllers: [ChatController],
   providers: [ChatService],
   exports: [ChatService],

@@ -12,6 +12,6 @@ export class ChatController {
   async sendMessage(
     @Body() chatMessageDto: ChatMessageDto,
   ): Promise<ChatResponseDto> {
-    return this.chatService.sendMessage(chatMessageDto);
+    return this.chatService.handleMessage(chatMessageDto);
   }
 }

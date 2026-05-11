@@ -1,5 +1,9 @@
+import { SourceCitation } from '../../rag/dto/rag-response.dto';
+
 export class ChatResponseDto {
-  user_message: string;
-  ai_response: string;
-  chat_id: string;
+  answer: string;
+  sources: SourceCitation[];
+  session_id: string;
+  tokens_used: number;
+  retrieval_confidence: 'high' | 'medium' | 'low';
 }
