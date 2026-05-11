@@ -14,6 +14,7 @@ export class QueryRewriterService {
       __dirname,
       '..',
       '..',
+      '..',
       'infrastructure',
       'langchain',
       'prompts',

@@ -50,6 +50,7 @@ export class RagPipelineService {
       __dirname,
       '..',
       '..',
+      '..',
       'infrastructure',
       'langchain',
       'prompts',
