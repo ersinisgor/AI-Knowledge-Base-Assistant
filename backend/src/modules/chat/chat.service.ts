@@ -105,4 +105,17 @@ export class ChatService {
       retrieval_confidence: pipelineResult.retrievalConfidence,
     };
   }
+
+  async getSessions() {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('chat_sessions')
+      .select('id, title, created_at, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      throw new Error(`Failed to fetch sessions: ${error.message}`);
+    }
+    return data;
+  }
 }
