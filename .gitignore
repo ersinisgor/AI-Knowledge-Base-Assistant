@@ -15,3 +15,16 @@ supabase/.temp/
 .env.*.local
 
 .DS_Store
+
+# Visual companion
+.superpowers/
+
+# Backend
+backend/node_modules/
+backend/dist/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
