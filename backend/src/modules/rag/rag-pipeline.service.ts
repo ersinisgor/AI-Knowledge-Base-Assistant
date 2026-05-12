@@ -13,7 +13,7 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { CitationService } from './citation.service';
 import { VectorRetrieverService } from './strategies/vector-retriever.service';
 import { RetrievedChunk, RetrievalConfidence } from './strategies/retriever.interface';
-import { SourceCitation } from './dto/rag-response.dto';
+import { SourceCitation, RetrievalMetadata } from './dto/rag-response.dto';
 
 export interface PipelineInput {
   question: string;
@@ -27,6 +27,9 @@ export interface PipelineOutput {
   tokensUsed: number;
   retrievalConfidence: RetrievalConfidence;
   metrics: Record<string, number>;
+  retrieval_metadata?: RetrievalMetadata;
+  model?: string;
+  latency_ms?: number;
 }
 
 @Injectable()
@@ -124,12 +127,23 @@ export class RagPipelineService {
       `Pipeline complete: confidence=${validation.confidence}, chunks=${chunks.length}, tokens=${llmResponse.tokensUsed.total}, total_ms=${metrics.total_ms}`,
     );
 
+    const retrievalMetadata: RetrievalMetadata = {
+      strategy: 'Hybrid (BM25 + Vector)',
+      latency_ms: Date.now() - totalStart,
+      sources_found: sources.length,
+      confidence: validation.confidence,
+      rewritten_query: rewrittenQuery,
+    };
+
     return {
       answer: llmResponse.content,
       sources,
       tokensUsed: llmResponse.tokensUsed.total,
       retrievalConfidence: validation.confidence,
       metrics,
+      retrieval_metadata: retrievalMetadata,
+      model: 'GPT-4.1-mini',
+      latency_ms: Date.now() - totalStart,
     };
   }
 }

@@ -3,6 +3,15 @@ export interface SourceCitation {
   source_type: string;
   similarity: number;
   chunk_index: number;
+  chunk_content?: string;
+}
+
+export interface RetrievalMetadata {
+  strategy: string;
+  latency_ms: number;
+  sources_found: number;
+  confidence: 'high' | 'medium' | 'low';
+  rewritten_query?: string;
 }
 
 export interface RagResponseDto {
@@ -10,5 +19,8 @@ export interface RagResponseDto {
   sources: SourceCitation[];
   session_id: string;
   tokens_used: number;
-  retrieval_confidence: string;
+  retrieval_confidence: 'high' | 'medium' | 'low';
+  retrieval_metadata?: RetrievalMetadata;
+  model?: string;
+  latency_ms?: number;
 }
