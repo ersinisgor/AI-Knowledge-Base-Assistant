@@ -10,7 +10,7 @@ export function useChat() {
   const [streamingContent, setStreamingContent] = useState('');
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const sessionIdRef = useRef<string | undefined>();
+  const sessionIdRef = useRef<string | undefined>(undefined);
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = { role: 'user', content };
