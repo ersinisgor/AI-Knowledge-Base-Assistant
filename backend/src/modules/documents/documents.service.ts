@@ -42,27 +42,39 @@ export class DocumentsService {
       source_type: documentData.source_type,
       metadata: documentData.metadata,
       created_at: documentData.created_at,
+      status: 'uploaded' as const,
     };
   }
 
   async findAll(): Promise<DocumentResponseDto[]> {
-    const supabase = this.supabaseService.getClient();
-
-    const { data, error } = await supabase
+    const { data: documents, error: docError } = await this.supabaseService.getClient()
       .from('documents')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
+    if (docError) {
+      throw new Error(`Failed to fetch documents: ${docError.message}`);
     }
 
-    return (data as DocumentRow[]).map((doc) => ({
-      id: doc.id,
-      content: doc.content,
-      source_type: doc.source_type,
-      metadata: doc.metadata,
-      created_at: doc.created_at,
-    }));
+    const documentsWithStats = await Promise.all(
+      (documents || []).map(async (doc) => {
+        const { count } = await this.supabaseService.getClient()
+          .from('document_chunks')
+          .select('*', { count: 'exact', head: true })
+          .eq('document_id', doc.id);
+
+        return {
+          id: doc.id,
+          content: doc.content,
+          source_type: doc.source_type,
+          metadata: (doc.metadata || {}) as Record<string, unknown>,
+          created_at: doc.created_at ?? '',
+          chunk_count: count || 0,
+          status: (count && count > 0 ? 'indexed' : 'uploaded') as 'indexed' | 'uploaded',
+        };
+      })
+    );
+
+    return documentsWithStats;
   }
 }
