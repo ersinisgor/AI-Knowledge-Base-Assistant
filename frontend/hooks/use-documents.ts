@@ -11,7 +11,7 @@ export function useDocuments() {
   const fetchDocuments = useCallback(async () => {
     try {
       const data = await api.documents.list();
-      setDocuments(data);
+      setDocuments(Array.isArray(data) ? data : []);
     } catch {
       // silently fail
     } finally {
