@@ -26,7 +26,7 @@ Built with **NestJS** (backend), **Next.js 15** (frontend), **Supabase + pgvecto
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  Frontend (Next.js 15, port 3000)                    │
+│  Frontend (Next.js 15, port 3001)                    │
 │  ┌────────┐  ┌───────────┐  ┌──────────┐            │
 │  │  Chat  │  │ Documents │  │Dashboard │            │
 │  └───┬────┘  └─────┬─────┘  └────┬─────┘            │
@@ -108,8 +108,10 @@ The frontend proxies all API requests through Next.js API routes to the backend,
 │   │   ├── api/                    # Proxy routes → backend
 │   │   │   ├── chat/route.ts
 │   │   │   ├── documents/route.ts
+│   │   │   ├── documents/[id]/route.ts  # DELETE proxy
 │   │   │   ├── ingestion/route.ts
-│   │   │   └── sessions/route.ts
+│   │   │   ├── sessions/route.ts
+│   │   │   └── upload-pdf/route.ts # PDF parse + ingest proxy
 │   │   ├── dashboard/page.tsx      # AI metrics dashboard
 │   │   ├── documents/page.tsx      # Document upload & management
 │   │   ├── layout.tsx              # Root layout with sidebar
@@ -180,7 +182,13 @@ cd frontend
 npm install
 ```
 
-The frontend expects the backend at `http://localhost:3000` (configured via `BACKEND_URL` in `.env.local`).
+Create a `.env.local` file in the `frontend/` directory:
+
+```env
+PORT=3001
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+BACKEND_URL=http://localhost:3000
+```
 
 ### Run the Application
 
@@ -189,12 +197,12 @@ The frontend expects the backend at `http://localhost:3000` (configured via `BAC
 cd backend
 npm run start:dev
 
-# Terminal 2: Frontend (port 3000, or as configured)
+# Terminal 2: Frontend (port 3001)
 cd frontend
 npm run dev
 ```
 
-Open http://localhost:3000 to access the frontend.
+Open http://localhost:3001 to access the frontend.
 
 ### Quick Test
 
@@ -249,6 +257,14 @@ GET /documents
 
 Returns documents with `id`, `content`, `source_type`, `metadata`, `created_at`, `chunk_count`, and `status` (`indexed` or `uploaded`).
 
+**Delete a document**
+
+```
+DELETE /documents/:id
+```
+
+Deletes the document and all its associated chunks. Returns `204 No Content`.
+
 ### Ingestion
 
 **Process content** (raw text ingestion)
@@ -274,6 +290,10 @@ Returns:
   "message": "Document ingested successfully"
 }
 ```
+
+**Upload a PDF file** (via Next.js proxy — not called directly)
+
+The frontend route `POST /api/upload-pdf` accepts `multipart/form-data` with a `file` field. It extracts the text using `pdf-parse` and forwards it to `/ingestion/process`. Supported formats: PDF, Markdown, plain text (max 10 MB).
 
 ### Chat
 
@@ -335,7 +355,7 @@ Interactive chat interface with streaming text, source citations, query transfor
 
 ### Documents (`/documents`)
 
-Document management with drag-and-drop upload zone, ingestion lifecycle progress bars (uploaded → parsing → chunking → embedding → indexed), and a sortable document table with status badges.
+Document management with drag-and-drop upload zone supporting PDF, Markdown, and plain text files. PDFs are parsed server-side (text extraction via `pdf-parse`) before ingestion. The document table shows ingestion lifecycle progress (uploaded → parsing → chunking → embedding → indexed), status badges, chunk counts, and a per-row delete button that removes the document and all its chunks.
 
 ### Dashboard (`/dashboard`)
 
@@ -455,6 +475,7 @@ npm run test:e2e      # End-to-end tests
 - [ ] Multi-source knowledge connectors (Slack, GitHub, incident reports)
 - [ ] Advanced retrieval: reranking, hybrid search (keyword + vector)
 - [ ] RAG evaluation system with quality metrics
-- [ ] Document upload supporting PDF, DOCX, and other binary formats
+- [x] PDF upload via drag-and-drop or file picker (text extracted server-side)
+- [ ] Document upload supporting DOCX and other binary formats
 - [ ] Authentication and multi-tenancy
 - [ ] Rate limiting and usage analytics
