@@ -12,7 +12,7 @@ export default function DocumentsPage() {
       <h1 className="text-foreground font-semibold text-lg mb-4">Documents</h1>
       <UploadZone onUpload={uploadDocument} />
       {loading ? (
-        <div className="text-center py-8 text-muted-foreground text-xs">Loading documents...</div>
+        <div className="text-center py-8 text-muted-foreground text-base">Loading documents...</div>
       ) : (
         <DocumentList documents={documents} />
       )}

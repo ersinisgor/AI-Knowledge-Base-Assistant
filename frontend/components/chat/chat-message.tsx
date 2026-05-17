@@ -12,7 +12,7 @@ export function ChatMessage({ message, onSourceClick }: ChatMessageProps) {
   if (message.role === 'user') {
     return (
       <div className="mb-6 max-w-[75%] ml-auto">
-        <div className="bg-secondary text-foreground px-4 py-3 rounded-lg text-[13px] leading-relaxed">
+        <div className="bg-secondary text-foreground px-4 py-3 rounded-lg text-base leading-relaxed">
           {message.content}
         </div>
       </div>
@@ -29,7 +29,7 @@ export function ChatMessage({ message, onSourceClick }: ChatMessageProps) {
           confidence={message.retrieval_confidence}
           sourcesCount={message.sources?.length}
         />
-        <div className="text-foreground text-[13.5px] leading-relaxed">
+        <div className="text-foreground text-base leading-relaxed">
           {message.content}
         </div>
         {message.sources && message.sources.length > 0 && (
@@ -38,14 +38,14 @@ export function ChatMessage({ message, onSourceClick }: ChatMessageProps) {
               <button
                 key={i}
                 onClick={() => onSourceClick?.(i)}
-                className="bg-primary/10 border border-primary/20 text-primary px-2.5 py-[3px] rounded text-[11px] hover:bg-primary/20 transition-colors"
+                className="bg-primary/10 border border-primary/20 text-primary px-2.5 py-[3px] rounded text-base hover:bg-primary/20 transition-colors"
               >
                 [{i + 1}] {source.document_name}
               </button>
             ))}
             {(message.model || message.latency_ms || message.tokens_used) && (
               <>
-                <span className="text-border text-[11px]">|</span>
+                <span className="text-border text-base">|</span>
                 <ModelBadge
                   model={message.model}
                   latencyMs={message.latency_ms}

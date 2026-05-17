@@ -24,19 +24,30 @@ export function useDocuments() {
   }, [fetchDocuments]);
 
   const uploadDocument = useCallback(
-    async (content: string, fileName: string) => {
-      const ext = fileName.split('.').pop()?.toLowerCase();
-      const sourceType = ext === 'pdf' ? 'pdf' : 'markdown';
+    async (file: File) => {
+      const ext = file.name.split('.').pop()?.toLowerCase();
 
-      const result = await api.ingestion.process({
-        content,
-        source_type: sourceType,
-        fileName,
-        metadata: { fileName },
-      });
-
-      await fetchDocuments();
-      return result;
+      if (ext === 'pdf') {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload-pdf', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || 'PDF upload failed');
+        }
+        await fetchDocuments();
+        return res.json();
+      } else {
+        const content = await file.text();
+        const result = await api.ingestion.process({
+          content,
+          source_type: 'markdown',
+          fileName: file.name,
+          metadata: { fileName: file.name },
+        });
+        await fetchDocuments();
+        return result;
+      }
     },
     [fetchDocuments]
   );

@@ -15,14 +15,14 @@ export function PipelineStats({ documentCount, totalChunks, failures, avgProcess
 
   return (
     <div className="bg-card border border-border rounded-lg p-3.5">
-      <div className="text-muted-foreground text-[10px] uppercase tracking-wider mb-2.5">
+      <div className="text-muted-foreground text-base uppercase tracking-wider mb-2.5">
         Ingestion Pipeline
       </div>
       <div className="flex flex-col gap-2">
         {stats.map(({ label, value, highlight }) => (
           <div key={label} className="flex justify-between">
-            <span className="text-muted-foreground text-[11px]">{label}</span>
-            <span className={highlight ? 'text-red-400 text-[11px] font-semibold' : 'text-foreground text-[11px] font-semibold'}>
+            <span className="text-muted-foreground text-base">{label}</span>
+            <span className={highlight ? 'text-red-400 text-base font-semibold' : 'text-foreground text-base font-semibold'}>
               {value}
             </span>
           </div>

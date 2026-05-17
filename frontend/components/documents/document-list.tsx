@@ -32,7 +32,7 @@ interface DocumentListProps {
 export function DocumentList({ documents }: DocumentListProps) {
   if (documents.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground text-xs">
+      <div className="text-center py-8 text-muted-foreground text-base">
         No documents yet. Upload your first file above.
       </div>
     );
@@ -40,7 +40,7 @@ export function DocumentList({ documents }: DocumentListProps) {
 
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr] px-3.5 py-2 border-b border-border text-muted-foreground text-[10px] uppercase tracking-wider">
+      <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr] px-3.5 py-2 border-b border-border text-muted-foreground text-base uppercase tracking-wider">
         <span>Document</span>
         <span>Ingestion Progress</span>
         <span>Status</span>
@@ -55,20 +55,20 @@ export function DocumentList({ documents }: DocumentListProps) {
         >
           <div className="flex items-center gap-2">
             <FileText className={cn('w-3.5 h-3.5', getSourceTypeColor(doc.source_type))} />
-            <span className="text-foreground text-xs truncate">{doc.metadata?.fileName as string || `document-${doc.id.slice(0, 8)}`}</span>
+            <span className="text-foreground text-base truncate">{doc.metadata?.fileName as string || `document-${doc.id.slice(0, 8)}`}</span>
           </div>
           <IngestionProgress status={doc.status} />
-          <span className={cn('px-2 py-0.5 rounded text-[10px] font-medium w-fit', statusStyles[doc.status] || statusStyles.uploaded)}>
+          <span className={cn('px-2 py-0.5 rounded text-base font-medium w-fit', statusStyles[doc.status] || statusStyles.uploaded)}>
             {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
           </span>
-          <span className="text-foreground text-xs">{doc.chunk_count ?? '—'}</span>
-          <span className="text-muted-foreground text-[11px]">{timeAgo(doc.created_at)}</span>
+          <span className="text-foreground text-base">{doc.chunk_count ?? '—'}</span>
+          <span className="text-muted-foreground text-base">{timeAgo(doc.created_at)}</span>
         </div>
       ))}
 
       <div className="px-3.5 py-2 flex gap-3">
         {['Uploaded', 'Parsing', 'Chunking', 'Embedding', 'Indexed'].map((stage) => (
-          <span key={stage} className="text-muted-foreground text-[10px] flex items-center gap-1">
+          <span key={stage} className="text-muted-foreground text-base flex items-center gap-1">
             <div className={cn(
               'w-1.5 h-1.5 rounded-full',
               stage === 'Embedding' ? 'bg-amber-400' : 'bg-emerald-400'

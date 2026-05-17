@@ -19,7 +19,7 @@ export function SourcesPanel({ sources, metadata, selectedIndex, onSelect }: Sou
   if (sources.length === 0 && !metadata) {
     return (
       <div className="w-[290px] bg-card border-l border-border flex items-center justify-center shrink-0">
-        <p className="text-muted-foreground text-xs">No sources yet</p>
+        <p className="text-muted-foreground text-base">No sources yet</p>
       </div>
     );
   }
@@ -28,9 +28,9 @@ export function SourcesPanel({ sources, metadata, selectedIndex, onSelect }: Sou
     <>
       <div className="w-[290px] bg-card border-l border-border flex flex-col shrink-0">
         <div className="px-3.5 py-3 border-b border-border flex justify-between items-center">
-          <span className="text-foreground text-xs font-semibold">Sources</span>
+          <span className="text-foreground text-base font-semibold">Sources</span>
           {sources.length > 0 && (
-            <span className="bg-primary/15 text-primary px-2 py-0.5 rounded text-[10px]">
+            <span className="bg-primary/15 text-primary px-2 py-0.5 rounded text-base">
               {sources.length} found
             </span>
           )}

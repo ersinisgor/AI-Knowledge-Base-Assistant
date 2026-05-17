@@ -15,7 +15,7 @@ export function ModelBadge({ model, latencyMs, tokensUsed }: ModelBadgeProps) {
   if (tokensUsed) parts.push(`${tokensUsed} tokens`);
 
   return (
-    <span className="text-muted-foreground text-[11px] inline-flex items-center gap-1">
+    <span className="text-muted-foreground text-base inline-flex items-center gap-1">
       <Settings className="w-2.5 h-2.5" />
       {parts.join(' · ')}
     </span>

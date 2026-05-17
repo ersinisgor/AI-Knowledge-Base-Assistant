@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Upload } from 'lucide-react';
 
 interface UploadZoneProps {
-  onUpload: (content: string, fileName: string) => Promise<unknown>;
+  onUpload: (file: File) => Promise<unknown>;
 }
 
 export function UploadZone({ onUpload }: UploadZoneProps) {
@@ -16,8 +16,7 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
     async (file: File) => {
       setIsUploading(true);
       try {
-        const content = await file.text();
-        await onUpload(content, file.name);
+        await onUpload(file);
       } catch (err) {
         console.error('Upload failed:', err);
       } finally {
@@ -48,10 +47,10 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
       }`}
     >
       <Upload className="w-5 h-5 text-primary mx-auto mb-1.5" />
-      <div className="text-primary text-[13px] font-medium">
+      <div className="text-primary text-base font-medium">
         {isUploading ? 'Uploading...' : 'Drop files here or click to upload'}
       </div>
-      <div className="text-muted-foreground text-[11px]">PDF, Markdown, Text — max 10MB</div>
+      <div className="text-muted-foreground text-base">PDF, Markdown, Text — max 10MB</div>
       <input
         ref={inputRef}
         type="file"

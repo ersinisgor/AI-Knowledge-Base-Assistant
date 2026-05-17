@@ -19,11 +19,11 @@ export function LatencyChart() {
   return (
     <div className="bg-card border border-border rounded-lg p-3.5">
       <div className="flex justify-between items-center mb-3">
-        <span className="text-muted-foreground text-[10px] uppercase tracking-wider">
+        <span className="text-muted-foreground text-base uppercase tracking-wider">
           Retrieval Latency (7 days)
         </span>
         <div className="flex gap-2">
-          <span className="flex items-center gap-1 text-[10px] text-primary">
+          <span className="flex items-center gap-1 text-base text-primary">
             <span className="w-2 h-0.5 bg-primary rounded inline-block" />
             Latency
           </span>
@@ -38,10 +38,10 @@ export function LatencyChart() {
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-          <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} unit="ms" />
+          <XAxis dataKey="day" tick={{ fontSize: 14, fill: '#475569' }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fontSize: 14, fill: '#475569' }} axisLine={false} tickLine={false} unit="ms" />
           <Tooltip
-            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', fontSize: '11px' }}
+            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', fontSize: '16px' }}
             labelStyle={{ color: '#94a3b8' }}
             itemStyle={{ color: '#22d3ee' }}
           />
