@@ -5,7 +5,11 @@ import { IngestionPipeline, DocumentInput } from './ingestion.pipeline';
 import { IngestContentDto } from './dto/ingest-content.dto';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { IngestResponseDto } from './dto/ingest-response.dto';
-import pdfParse from 'pdf-parse';
+// pdf-parse v2 uses a class-based API
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PDFParse } = require('pdf-parse') as {
+  PDFParse: new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> };
+};
 
 /**
  * Controller for handling document ingestion requests.
@@ -78,7 +82,8 @@ export class IngestionController {
       throw new BadRequestException('No file uploaded');
     }
 
-    const parsed = await pdfParse(file.buffer);
+    const parser = new PDFParse({ data: file.buffer });
+    const parsed = await parser.getText();
     const text = parsed.text?.trim();
 
     if (!text || text.length < 10) {

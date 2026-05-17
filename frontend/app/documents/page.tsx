@@ -5,7 +5,7 @@ import { DocumentList } from '@/components/documents/document-list';
 import { useDocuments } from '@/hooks/use-documents';
 
 export default function DocumentsPage() {
-  const { documents, loading, uploadDocument } = useDocuments();
+  const { documents, loading, uploadDocument, deleteDocument } = useDocuments();
 
   return (
     <div className="h-full overflow-y-auto p-5">
@@ -14,7 +14,7 @@ export default function DocumentsPage() {
       {loading ? (
         <div className="text-center py-8 text-muted-foreground text-base">Loading documents...</div>
       ) : (
-        <DocumentList documents={documents} />
+        <DocumentList documents={documents} onDelete={deleteDocument} />
       )}
     </div>
   );

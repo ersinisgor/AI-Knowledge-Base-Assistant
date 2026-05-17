@@ -52,5 +52,13 @@ export function useDocuments() {
     [fetchDocuments]
   );
 
-  return { documents, loading, uploadDocument, refetch: fetchDocuments };
+  const deleteDocument = useCallback(
+    async (id: string) => {
+      await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+      await fetchDocuments();
+    },
+    [fetchDocuments]
+  );
+
+  return { documents, loading, uploadDocument, deleteDocument, refetch: fetchDocuments };
 }

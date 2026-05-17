@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../../infrastructure/supabase/supabase.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentResponseDto } from './dto/document-response.dto';
@@ -76,5 +76,17 @@ export class DocumentsService {
     );
 
     return documentsWithStats;
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = this.supabaseService.getClient();
+
+    await supabase.from('document_chunks').delete().eq('document_id', id);
+
+    const { error } = await supabase.from('documents').delete().eq('id', id);
+
+    if (error) {
+      throw new NotFoundException(`Document ${id} not found`);
+    }
   }
 }
