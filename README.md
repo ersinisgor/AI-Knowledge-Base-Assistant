@@ -1,58 +1,70 @@
 # AI Knowledge Base Assistant
 
-A production-grade Retrieval-Augmented Generation (RAG) platform with an enterprise AI operations frontend. Users can ingest documents, query their knowledge base, and receive accurate, source-cited answers powered by AI.
+> **Full-stack RAG platform** — document ingestion, vector search, and AI-powered Q&A with source attribution, built as a production-grade monorepo.
 
-Built with **NestJS** (backend), **Next.js 15** (frontend), **Supabase + pgvector**, and **OpenAI**.
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-412991?style=flat-square&logo=openai&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-pgvector-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1.x-1C3C3C?style=flat-square)
 
 ---
 
-## Table of Contents
+## What This Project Does
 
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Backend API Reference](#backend-api-reference)
-- [Frontend Pages](#frontend-pages)
-- [RAG Pipeline](#rag-pipeline)
-- [Database Schema](#database-schema)
-- [Environment Variables](#environment-variables)
-- [Testing](#testing)
-- [Roadmap](#roadmap)
+Companies accumulate internal knowledge across PDFs, Markdown docs, Slack threads, and GitHub wikis — and most of it becomes inaccessible within weeks of being written. This platform solves that by turning any text document into a queryable knowledge base.
+
+You upload a document. The system chunks it, generates vector embeddings, and stores them in a Postgres database with pgvector. When a user asks a question, the platform rewrites the query for better retrieval, performs cosine similarity search, validates the retrieval confidence, assembles a token-budgeted context window, and routes it through GPT-4o-mini — returning a grounded, source-cited answer.
+
+This is **RAG (Retrieval-Augmented Generation)** implemented from the ground up, without relying on a managed chain library for the core pipeline logic.
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  Frontend (Next.js 15, port 3001)                    │
-│  ┌────────┐  ┌───────────┐  ┌──────────┐            │
-│  │  Chat  │  │ Documents │  │Dashboard │            │
-│  └───┬────┘  └─────┬─────┘  └────┬─────┘            │
-│      └──────┬───────┘────────────┘                   │
-│             │  API Proxy Routes (/api/*)             │
-└─────────────┼────────────────────────────────────────┘
-              │
-              v
-┌──────────────────────────────────────────────────────┐
-│  Backend (NestJS, port 3000)                         │
-│  /chat  /documents  /ingestion/process  /chat/sessions│
-│  ┌─────────────────────────────────────────┐         │
-│  │          RAG Pipeline                    │         │
-│  │  Query Rewrite → Embed → Retrieve →     │         │
-│  │  Validate → Context → LLM → Cite        │         │
-│  └─────────────────────────────────────────┘         │
-└─────────────┼────────────────────────────────────────┘
-              │
-              v
-┌──────────────────────────────────────────────────────┐
-│  Supabase (PostgreSQL + pgvector)                     │
-│  documents · document_chunks · chat_sessions · messages│
-└──────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  Frontend  —  Next.js 16, App Router, TypeScript               │
+│                                                                 │
+│   /chat          /documents          /dashboard                 │
+│   ↓ Chat UI      ↓ Upload + list     ↓ Metrics + activity      │
+│                                                                 │
+│   API Routes (/api/*)  ← proxy layer, keeps backend internal   │
+└───────────────────────────────┬────────────────────────────────┘
+                                │ HTTP
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│  Backend  —  NestJS 11, TypeScript strict mode                 │
+│                                                                 │
+│  POST /ingestion/upload    POST /chat    GET /documents          │
+│  DELETE /documents/:id   POST /api/upload-pdf (Next.js proxy)  │
+│                                                                 │
+│  ┌──────────────────────┐  ┌─────────────────────────────────┐ │
+│  │  Ingestion Pipeline  │  │        RAG Pipeline             │ │
+│  │                      │  │                                 │ │
+│  │  1. Store document   │  │  a. Query rewrite (LLM)        │ │
+│  │  2. Clean text       │  │  b. Embed query (OpenAI)       │ │
+│  │  3. Chunk (LangChain)│  │  c. Vector retrieve (pgvector) │ │
+│  │  4. Embed (OpenAI)   │  │  d. Confidence validation      │ │
+│  │  5. Store chunks     │  │  e. Token-budgeted context     │ │
+│  └──────────────────────┘  │  f. LLM completion             │ │
+│                             │  g. Citation formatting        │ │
+│                             └─────────────────────────────────┘ │
+│                                                                 │
+│  Infrastructure Layer                                           │
+│  LlmService · EmbeddingsService · SupabaseService              │
+└───────────────────────────────┬────────────────────────────────┘
+                                │
+                                ▼
+┌────────────────────────────────────────────────────────────────┐
+│  Supabase  —  PostgreSQL + pgvector extension                  │
+│                                                                 │
+│  documents        document_chunks      chat_sessions  messages  │
+│                   embedding vector(1536)                        │
+│                   HNSW index (cosine)                          │
+└────────────────────────────────────────────────────────────────┘
 ```
-
-The frontend proxies all API requests through Next.js API routes to the backend, keeping backend URLs internal.
 
 ---
 
@@ -60,79 +72,389 @@ The frontend proxies all API requests through Next.js API routes to the backend,
 
 ### Backend
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | NestJS 11, TypeScript (strict) |
-| **Database** | Supabase (PostgreSQL + pgvector) |
-| **LLM** | OpenAI GPT (chat completions) |
-| **Embeddings** | OpenAI text-embedding-3-small (1536-dim) |
-| **Text Splitting** | LangChain RecursiveCharacterTextSplitter |
-| **Validation** | class-validator, class-transformer |
+| Concern | Choice | Why |
+|---------|--------|-----|
+| Framework | NestJS 11 + TypeScript | Enforces modular architecture; DI container eliminates manual wiring |
+| Database | Supabase (PostgreSQL) | Managed Postgres with pgvector built-in |
+| Vector index | pgvector HNSW | Sub-linear ANN search; outperforms IVFFlat on recall at this scale |
+| LLM | OpenAI GPT-4o-mini | Cost-efficient with strong instruction-following for citation-constrained prompts |
+| Embeddings | text-embedding-3-small (1536-dim) | Best cost/performance ratio in OpenAI's current embedding lineup |
+| Text splitting | LangChain `RecursiveCharacterTextSplitter` | Hierarchy-aware splitting preserves semantic coherence at paragraph → sentence → word boundaries |
+| Validation | class-validator + class-transformer | Declarative DTO validation at the controller layer |
 
 ### Frontend
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 15 (App Router) |
-| **UI Components** | shadcn/ui, Radix primitives |
-| **Styling** | Tailwind CSS v4, dark theme |
-| **Icons** | Lucide React |
-| **Charts** | Recharts |
-| **Language** | TypeScript (strict) |
+| Concern | Choice | Why |
+|---------|--------|-----|
+| Framework | Next.js 16, App Router | File-based routing; API routes double as CORS proxy to backend |
+| Language | TypeScript strict | Shared type contracts with the backend (types mirror backend DTOs) |
+| Styling | Tailwind CSS v4 | Dark-first design tokens via CSS custom properties |
+| UI primitives | shadcn/ui | Unstyled-at-core, project-owned — no abstraction penalty |
+| Charts | Recharts | Composable chart primitives; `ResponsiveContainer` handles fluid layouts |
+| Icons | Lucide React | Consistent 24px SVG set with full tree-shaking |
+
+---
+
+## Key Engineering Decisions
+
+### 1. Retrieval Confidence Scoring
+
+Rather than blindly passing retrieved chunks to the LLM, the `RetrievalValidatorService` inspects the top cosine similarity score and chunk count before generation:
+
+```
+topScore > 0.85 AND chunks ≥ 3  →  HIGH   (answer normally with citations)
+topScore > 0.70 AND chunks ≥ 2  →  MEDIUM (answer cautiously, flag limitations)
+otherwise                        →  LOW    (surface uncertainty explicitly)
+```
+
+This changes both the system prompt instruction injected into the context and the confidence badge shown in the UI — giving end users a calibrated signal about answer reliability.
+
+### 2. Token Budget Management
+
+The `ContextBuilderService` enforces hard token ceilings per section before sending to the LLM:
+
+| Section | Token Budget |
+|---------|-------------|
+| System instructions | 300 |
+| Conversation history | 800 |
+| Retrieved chunks | 2,500 |
+
+Token estimation uses a 4-characters-per-token heuristic (fast, no tokenizer dependency). If a section exceeds its budget, items are dropped tail-first. This prevents silent context overflows that degrade answer quality without raising an exception.
+
+### 3. Query Rewriting
+
+The user's raw question goes through a dedicated rewrite step before embedding. An LLM call (temp=0.2, max_tokens=200) resolves pronouns and ambiguous references using conversation history, then produces a self-contained search query. A degraded version (direct question passthrough) activates automatically if the rewrite call fails — so retrieval still runs.
+
+### 4. Layered Infrastructure vs. Tight Coupling
+
+The `LlmService` and `EmbeddingsService` each sit behind a provider interface. Swapping from OpenAI to another model provider requires only a new `implements ILLMProvider` class — no changes propagate to the pipeline or business logic modules. The same pattern applies to embeddings.
+
+### 5. HNSW Vector Index
+
+The `document_chunks` table is indexed with HNSW (Hierarchical Navigable Small World) with `m=16, ef_construction=64`. This makes approximate nearest neighbor search scale gracefully as chunk count grows, at the cost of slightly higher build time compared to IVFFlat — an acceptable trade-off for a read-heavy retrieval workload.
+
+---
+
+## Ingestion Pipeline
+
+A document goes through five sequential steps before it becomes queryable:
+
+```
+Input document (text content + source_type)
+        │
+        ▼
+[1] INSERT into documents table → obtain document_id (UUID)
+        │
+        ▼
+[2] DocumentCleaner.cleanText()
+    Normalizes line endings, collapses whitespace, trims
+        │
+        ▼
+[3] TextChunker.chunk()   ← LangChain RecursiveCharacterTextSplitter
+    chunkSize=500 chars · chunkOverlap=80 chars
+    Split priority: \n\n → \n → space → character
+        │
+        ▼
+[4] EmbeddingsService.embedBatch()   ← OpenAI text-embedding-3-small
+    All chunks embedded in a single batched API call → number[][]
+        │
+        ▼
+[5] Bulk INSERT into document_chunks
+    Stores: content, embedding vector(1536), metadata, chunk_index
+```
+
+**Response:** `{ document_id, chunk_count }`
+
+---
+
+## RAG Query Pipeline
+
+```
+User question + conversation history
+        │
+        ▼
+[a] QueryRewriterService  — LLM call, temp=0.2
+    Produces standalone search query from conversational context
+        │
+        ▼
+[b] EmbeddingsService.embed(rewrittenQuery)
+    Single vector for similarity search
+        │
+        ▼
+[c] VectorRetrieverService — Supabase RPC: match_documents()
+    SELECT ... ORDER BY embedding <=> query_embedding LIMIT topK
+    Optional: filter by source_type metadata
+        │
+        ▼
+[d] RetrievalValidatorService
+    Inspects top similarity score + chunk count → HIGH / MEDIUM / LOW
+        │
+        ▼
+[e] ContextBuilderService
+    Assembles: system prompt + confidence instruction + history + chunks
+    Token-budget enforced per section
+        │
+        ▼
+[f] PromptBuilderService
+    Constructs OpenAI messages array: [{role: system, ...}, {role: user, ...}]
+        │
+        ▼
+[g] LlmService.chat()  ← OpenAI GPT-4o-mini, temp=0.3
+        │
+        ▼
+[h] CitationService.formatCitations()
+    Deduplicates sources by document name → SourceCitation[]
+        │
+        ▼
+Response: { answer, sources, tokens_used, retrieval_confidence, metrics, latency_ms }
+```
+
+---
+
+## Database Schema
+
+```sql
+-- Stores original document content
+CREATE TABLE documents (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content     TEXT NOT NULL,
+  source_type VARCHAR(50) NOT NULL CHECK (source_type IN ('pdf','markdown','slack','github')),
+  metadata    JSONB NOT NULL DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- Stores chunks with their embeddings
+CREATE TABLE document_chunks (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  document_id  UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  content      TEXT NOT NULL,
+  embedding    vector(1536),          -- OpenAI text-embedding-3-small
+  metadata     JSONB NOT NULL DEFAULT '{}',
+  chunk_index  INTEGER NOT NULL,
+  created_at   TIMESTAMPTZ DEFAULT now()
+);
+
+-- HNSW index for approximate nearest neighbor search
+CREATE INDEX document_chunks_embedding_idx
+  ON document_chunks
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+
+-- Similarity search function
+CREATE FUNCTION match_documents(
+  query_embedding vector(1536),
+  match_count     INT DEFAULT 5,
+  filter          JSONB DEFAULT '{}'
+) RETURNS TABLE (id UUID, document_id UUID, content TEXT, metadata JSONB, similarity FLOAT)
+LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  SELECT dc.id, dc.document_id, dc.content, dc.metadata,
+         1 - (dc.embedding <=> query_embedding) AS similarity
+  FROM document_chunks dc
+  WHERE CASE WHEN filter->>'source_type' IS NOT NULL
+             THEN dc.metadata->>'type' = filter->>'source_type'
+             ELSE true END
+  ORDER BY dc.embedding <=> query_embedding
+  LIMIT match_count;
+END; $$;
+
+-- Chat history tables
+CREATE TABLE chat_sessions (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NULL,
+  title      TEXT,
+  metadata   JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE messages (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id  UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+  role        TEXT NOT NULL CHECK (role IN ('system','user','assistant','tool')),
+  content     TEXT NOT NULL,
+  sources     JSONB,
+  metadata    JSONB DEFAULT '{}',
+  tokens_used INTEGER,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## API Reference
+
+### Ingestion
+
+```http
+POST /ingestion/upload
+Content-Type: application/json
+
+{
+  "content": "string",
+  "source_type": "pdf" | "markdown" | "slack" | "github",
+  "fileName": "string (optional)",
+  "metadata": { ...arbitrary key-value pairs }
+}
+```
+
+```json
+// 201 Created
+{
+  "success": true,
+  "document_id": "3f2e1a...",
+  "chunk_count": 18,
+  "message": "Document uploaded successfully. Created 18 chunk(s)."
+}
+```
+
+### Chat
+
+```http
+POST /chat
+Content-Type: application/json
+
+{
+  "message": "What is our Q3 refund rate?",
+  "session_id": "optional — omit to start a new session"
+}
+```
+
+```json
+// 200 OK
+{
+  "answer": "According to the Q3 Operations Report, the refund rate was 3.2%...",
+  "sources": [
+    {
+      "document_name": "q3-ops-report.pdf",
+      "source_type": "pdf",
+      "similarity": 0.924,
+      "chunk_index": 7
+    }
+  ],
+  "session_id": "uuid",
+  "tokens_used": 512,
+  "retrieval_confidence": "high",
+  "retrieval_metadata": {
+    "strategy": "Hybrid (BM25 + Vector)",
+    "latency_ms": 1340,
+    "sources_found": 4,
+    "confidence": "high",
+    "rewritten_query": "Q3 third-quarter refund rate percentage operations report"
+  },
+  "model": "GPT-4.1-mini",
+  "latency_ms": 1340
+}
+```
+
+### Documents
+
+```http
+GET    /documents        # List all documents with chunk_count and status
+POST   /documents        # Create document record (without ingestion)
+DELETE /documents/:id    # Delete document and all its chunks → 204 No Content
+GET    /chat/sessions    # List recent chat sessions
+```
+
+### PDF Upload (Next.js proxy route)
+
+```http
+POST /api/upload-pdf
+Content-Type: multipart/form-data
+
+file: <binary PDF>
+```
+
+Text is extracted server-side by `pdf-parse`, then forwarded to `/ingestion/process` as JSON. This route lives in the Next.js layer to avoid multipart/multer issues in the NestJS backend.
+
+---
+
+## Frontend Overview
+
+The frontend is a Next.js 16 App Router application with three pages. It communicates with the backend exclusively through Next.js API routes (`/api/*`) that act as a thin proxy — keeping the backend URL server-side and sidestepping CORS.
+
+### Chat Page (`/`)
+
+- `useChat` custom hook manages the full message lifecycle: sending, optimistic UI update, streaming simulation (character-by-character reveal at 15ms intervals), session ID persistence across turns, and error recovery
+- `SourcesPanel` renders alongside chat — shows retrieval configuration, per-source similarity scores with color-coded confidence (green ≥ 85%, amber ≥ 70%, red below), and opens a `Sheet` drawer for chunk-level preview
+- `QueryTransformation` surfaces the rewritten query when it differs from the original input — provides transparency into the retrieval process
+- `ConfidenceWarning` renders an amber alert when `retrieval_confidence === 'low'`
+
+### Documents Page (`/documents`)
+
+- `UploadZone` handles both click-to-browse and drag-and-drop; PDF files are sent as `multipart/form-data` to `/api/upload-pdf` (server-side text extraction via `pdf-parse`), while Markdown and plain text files are read client-side with `file.text()`
+- `IngestionProgress` renders a five-segment bar (uploaded → parsing → chunking → embedding → indexed) with amber pulse animation on the active stage
+- `useDocuments` refetches the document list after each upload or delete so the table stays current without a manual refresh
+- Each row in the document table has a trash icon button; clicking it calls `DELETE /api/documents/:id`, which proxies to the backend and removes both the document and all its associated chunks
+
+### Dashboard (`/dashboard`)
+
+- `Promise.all` fetches documents and sessions in parallel on mount, then derives computed metrics (indexed count, total chunks, failure count) client-side
+- `LatencyChart` uses Recharts `AreaChart` with a CSS linear gradient fill and a static 7-day demo dataset (real latency tracking is a roadmap item)
+- `ActivityFeed` merges document and session events into a unified chronological log
 
 ---
 
 ## Project Structure
 
 ```
-├── backend/                        # NestJS API server
+├── backend/
 │   ├── src/
-│   │   ├── infrastructure/         # Shared infrastructure
-│   │   │   ├── llm/                # LLM abstraction (OpenAI)
-│   │   │   ├── embeddings/         # Embedding abstraction (OpenAI)
-│   │   │   ├── supabase/           # Database client
-│   │   │   └── langchain/          # Text splitting, prompt templates
+│   │   ├── infrastructure/
+│   │   │   ├── embeddings/          # IEmbeddingProvider + OpenAI impl
+│   │   │   ├── llm/                 # ILLMProvider + OpenAI impl + TokenEstimator
+│   │   │   ├── supabase/            # SupabaseService (singleton client)
+│   │   │   └── langchain/
+│   │   │       ├── prompts/         # system/default.md · rewrite/default.md
+│   │   │       └── splitters/       # RecursiveCharacterTextSplitter wrapper
 │   │   ├── modules/
-│   │   │   ├── documents/          # Document CRUD
-│   │   │   ├── ingestion/          # Chunk → embed → store pipeline
-│   │   │   ├── chat/               # Chat with session management
-│   │   │   └── rag/                # RAG pipeline orchestrator
+│   │   │   ├── ingestion/
+│   │   │   │   ├── ingestion.pipeline.ts     # 5-step orchestrator
+│   │   │   │   ├── chunking/text-chunker.ts  # LangChain splitter
+│   │   │   │   └── processors/document-cleaner.ts
+│   │   │   ├── rag/
+│   │   │   │   ├── rag-pipeline.service.ts   # 9-step orchestrator
+│   │   │   │   ├── query-rewriter.service.ts
+│   │   │   │   ├── retrieval-validator.service.ts
+│   │   │   │   ├── context-builder.service.ts
+│   │   │   │   ├── prompt-builder.service.ts
+│   │   │   │   ├── citation.service.ts
+│   │   │   │   └── strategies/
+│   │   │   │       └── vector-retriever.service.ts
+│   │   │   ├── chat/                # Session management + RAG integration
+│   │   │   └── documents/           # CRUD + chunk_count aggregation
 │   │   ├── app.module.ts
-│   │   └── main.ts
-│   ├── test/
-│   ├── supabase/                   # Migrations and config
-│   └── package.json
+│   │   └── main.ts                  # CORS, ValidationPipe, bootstrap
+│   └── supabase/migrations/         # 5 SQL migration files
 │
-├── frontend/                       # Next.js 15 frontend
+├── frontend/
 │   ├── app/
-│   │   ├── api/                    # Proxy routes → backend
-│   │   │   ├── chat/route.ts
-│   │   │   ├── documents/route.ts
-│   │   │   ├── documents/[id]/route.ts  # DELETE proxy
-│   │   │   ├── ingestion/route.ts
-│   │   │   ├── sessions/route.ts
-│   │   │   └── upload-pdf/route.ts # PDF parse + ingest proxy
-│   │   ├── dashboard/page.tsx      # AI metrics dashboard
-│   │   ├── documents/page.tsx      # Document upload & management
-│   │   ├── layout.tsx              # Root layout with sidebar
-│   │   ├── page.tsx                # Chat page
-│   │   └── globals.css             # Dark theme tokens
+│   │   ├── api/                     # Proxy routes (chat, documents, documents/[id], ingestion, sessions, upload-pdf)
+│   │   ├── dashboard/page.tsx
+│   │   ├── documents/page.tsx
+│   │   ├── page.tsx                 # Chat page (root)
+│   │   ├── layout.tsx               # Root layout: Sidebar + main
+│   │   └── globals.css              # Tailwind v4 + CSS custom properties (dark theme)
 │   ├── components/
-│   │   ├── chat/                   # Messages, streaming, model badge
-│   │   ├── dashboard/              # Stat cards, charts, activity feed
-│   │   ├── documents/              # Upload zone, ingestion progress
-│   │   ├── layout/                 # Sidebar navigation
-│   │   ├── sources/                # Source cards, preview drawer
-│   │   └── ui/                     # shadcn/ui primitives
-│   ├── hooks/                      # useChat, useSessions, useDocuments
-│   ├── lib/
-│   │   ├── api.ts                  # API client
-│   │   ├── types.ts                # Shared TypeScript types
-│   │   └── utils.ts                # cn() utility
-│   └── package.json
+│   │   ├── chat/                    # ChatArea, ChatMessage, ChatInput, StreamingIndicator,
+│   │   │                            # ConfidenceWarning, ModelBadge, QueryTransformation
+│   │   ├── sources/                 # SourcesPanel, SourceCard, SourcePreview, RetrievalConfig
+│   │   ├── documents/               # UploadZone, DocumentList, IngestionProgress
+│   │   ├── dashboard/               # StatCard, LatencyChart, PipelineStats, ActivityFeed, SystemConfig
+│   │   ├── layout/                  # Sidebar
+│   │   └── ui/                      # shadcn/ui: Button, Card, Badge, Sheet, ScrollArea, Skeleton…
+│   ├── hooks/
+│   │   ├── use-chat.ts              # Message state, streaming sim, session persistence
+│   │   ├── use-documents.ts         # Upload (PDF + text) + list + delete + refetch
+│   │   └── use-sessions.ts          # Session list for sidebar
+│   └── lib/
+│       ├── api.ts                   # Centralized fetch client (/api/*)
+│       ├── types.ts                 # Shared TypeScript interfaces (mirror backend DTOs)
+│       └── utils.ts                 # cn() — clsx + tailwind-merge
 │
-├── docs/                           # Design specs and plans
-└── README.md
+└── supabase/
+    └── migrations/                  # 001–005: tables, extensions, indexes, RPC function
 ```
 
 ---
@@ -141,341 +463,105 @@ The frontend proxies all API requests through Next.js API routes to the backend,
 
 ### Prerequisites
 
-- Node.js >= 18
-- npm >= 9
-- A Supabase project with pgvector enabled
-- An OpenAI API key
+- Node.js ≥ 18
+- A Supabase project (free tier works) with the `vector` extension enabled
+- OpenAI API key
 
-### Installation
-
-```bash
-git clone https://github.com/ersinisgor/AI-Knowledge-Base-Assistant.git
-cd AI-Knowledge-Base-Assistant
-```
-
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
 npm install
+
+# Copy and fill in credentials
 cp .env.example .env
-# Edit .env with your Supabase and OpenAI credentials
 ```
 
-Run the migrations against your Supabase database:
+Apply migrations to your Supabase project (SQL Editor or CLI):
+
+```
+supabase/migrations/001_create_documents_table.sql
+supabase/migrations/002_create_document_chunks.sql
+supabase/migrations/003_create_chat_sessions.sql
+supabase/migrations/004_create_messages.sql
+supabase/migrations/005_create_match_documents_fn.sql
+```
 
 ```bash
-supabase db push
+npm run start:dev     # Starts on port 3000
 ```
 
-Or apply them manually through the Supabase dashboard in order:
-1. `001_create_documents_table.sql`
-2. `002_create_document_chunks.sql`
-3. `003_create_chat_sessions.sql`
-4. `004_create_messages.sql`
-5. `005_create_match_documents_fn.sql`
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
 npm install
+# BACKEND_URL defaults to http://localhost:3000 — override in .env.local if needed
+npm run dev           # Starts on port 3001
 ```
 
-Create a `.env.local` file in the `frontend/` directory:
-
-```env
-PORT=3001
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-BACKEND_URL=http://localhost:3000
-```
-
-### Run the Application
+### Quick Smoke Test
 
 ```bash
-# Terminal 1: Backend (port 3000)
-cd backend
-npm run start:dev
-
-# Terminal 2: Frontend (port 3001)
-cd frontend
-npm run dev
-```
-
-Open http://localhost:3001 to access the frontend.
-
-### Quick Test
-
-```bash
-# Ingest a document
-curl -X POST http://localhost:3000/ingestion/process \
+# 1. Ingest a document
+curl -X POST http://localhost:3000/ingestion/upload \
   -H "Content-Type: application/json" \
-  -d '{"content": "Our company allows remote work up to 3 days per week.", "source_type": "markdown"}'
+  -d '{
+    "content": "Remote work is allowed up to 3 days per week for all full-time employees.",
+    "source_type": "markdown",
+    "fileName": "remote-work-policy.md"
+  }'
 
-# Ask a question
+# 2. Query it
 curl -X POST http://localhost:3000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "What is the remote work policy?"}'
+  -d '{"message": "How many days can I work remotely?"}'
 ```
 
----
+### Environment Variables
 
-## Backend API Reference
-
-### Health Check
-
-```
-GET /
-```
-
-### Documents
-
-**Create a document**
-
-```
-POST /documents
-Content-Type: application/json
-
-{
-  "content": "Company policy states that...",
-  "source_type": "markdown",
-  "metadata": { "department": "engineering" }
-}
-```
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `content` | string | yes | Document text (min 1 char) |
-| `source_type` | enum | yes | `pdf`, `markdown`, `slack`, `github` |
-| `metadata` | object | no | Arbitrary key-value metadata |
-
-**List all documents**
-
-```
-GET /documents
-```
-
-Returns documents with `id`, `content`, `source_type`, `metadata`, `created_at`, `chunk_count`, and `status` (`indexed` or `uploaded`).
-
-**Delete a document**
-
-```
-DELETE /documents/:id
-```
-
-Deletes the document and all its associated chunks. Returns `204 No Content`.
-
-### Ingestion
-
-**Process content** (raw text ingestion)
-
-```
-POST /ingestion/process
-Content-Type: application/json
-
-{
-  "content": "Text to ingest...",
-  "source_type": "pdf",
-  "metadata": { "filename": "report.pdf" }
-}
-```
-
-Returns:
-
-```json
-{
-  "success": true,
-  "document_id": "uuid",
-  "chunk_count": 12,
-  "message": "Document ingested successfully"
-}
-```
-
-**Upload a PDF file** (via Next.js proxy — not called directly)
-
-The frontend route `POST /api/upload-pdf` accepts `multipart/form-data` with a `file` field. It extracts the text using `pdf-parse` and forwards it to `/ingestion/process`. Supported formats: PDF, Markdown, plain text (max 10 MB).
-
-### Chat
-
-**Send a message**
-
-```
-POST /chat
-Content-Type: application/json
-
-{
-  "message": "What is our remote work policy?",
-  "session_id": "optional-existing-session-uuid"
-}
-```
-
-Response:
-
-```json
-{
-  "answer": "According to the Employee Handbook, the remote work policy allows...",
-  "sources": [
-    {
-      "document_name": "Employee Handbook",
-      "source_type": "pdf",
-      "similarity": 0.92,
-      "chunk_index": 3,
-      "chunk_content": "..."
-    }
-  ],
-  "session_id": "uuid",
-  "tokens_used": 487,
-  "retrieval_confidence": "high",
-  "retrieval_metadata": {
-    "strategy": "Hybrid (BM25 + Vector)",
-    "latency_ms": 1200,
-    "sources_found": 5,
-    "confidence": "high"
-  },
-  "model": "GPT-4.1-mini",
-  "latency_ms": 1200
-}
-```
-
-**List sessions**
-
-```
-GET /chat/sessions
-```
-
-Returns recent chat sessions with `id`, `title`, `created_at`, `updated_at`.
-
----
-
-## Frontend Pages
-
-### Chat (`/`)
-
-Interactive chat interface with streaming text, source citations, query transformation display, and a collapsible sources panel showing retrieval configuration and individual source cards with similarity scores.
-
-### Documents (`/documents`)
-
-Document management with drag-and-drop upload zone supporting PDF, Markdown, and plain text files. PDFs are parsed server-side (text extraction via `pdf-parse`) before ingestion. The document table shows ingestion lifecycle progress (uploaded → parsing → chunking → embedding → indexed), status badges, chunk counts, and a per-row delete button that removes the document and all its chunks.
-
-### Dashboard (`/dashboard`)
-
-Operations dashboard with metric cards (documents, sessions, chunks, confidence), a 7-day latency chart, ingestion pipeline stats, system configuration display, and a live activity feed.
-
----
-
-## RAG Pipeline
-
-The `RagPipelineService` orchestrates the following steps:
-
-| Step | Service | Description |
-|------|---------|-------------|
-| 1. Query Rewrite | `QueryRewriterService` | LLM rephrases the user question for better retrieval |
-| 2. Embed Query | `EmbeddingsService` | 1536-dim vector via OpenAI text-embedding-3-small |
-| 3. Build Filters | `RetrievalFilterService` | Metadata filter constraints |
-| 4. Retrieve | `VectorRetrieverService` | `match_documents` RPC cosine similarity search |
-| 5. Validate | `RetrievalValidatorService` | Confidence scoring |
-| 6. Build Context | `ContextBuilderService` | Token-budgeted assembly (system: 300, history: 800, chunks: 2500) |
-| 7. Build Prompt | `PromptBuilderService` | System prompt, context, and question formatting |
-| 8. LLM Completion | `LlmService` | OpenAI GPT answer generation |
-| 9. Format Citations | `CitationService` | Source deduplication and formatting |
-
----
-
-## Database Schema
-
-Managed via Supabase migrations in `backend/supabase/migrations/`.
-
-### `documents`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `content` | TEXT | Original document content |
-| `source_type` | TEXT | `pdf`, `markdown`, `slack`, or `github` |
-| `metadata` | JSONB | Arbitrary metadata |
-| `created_at` | TIMESTAMPTZ | Creation timestamp |
-
-### `document_chunks`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `document_id` | UUID | FK to documents |
-| `content` | TEXT | Chunk text |
-| `embedding` | vector(1536) | OpenAI embedding |
-| `metadata` | JSONB | Chunk-level metadata |
-| `chunk_index` | INTEGER | Position in original document |
-| `created_at` | TIMESTAMPTZ | Creation timestamp |
-
-Indexed with HNSW for fast cosine similarity search.
-
-### `chat_sessions`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `user_id` | UUID | Optional user reference |
-| `title` | TEXT | Session title (auto-generated) |
-| `metadata` | JSONB | Session metadata |
-| `created_at` | TIMESTAMPTZ | Creation timestamp |
-| `updated_at` | TIMESTAMPTZ | Last update timestamp |
-
-### `messages`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `session_id` | UUID | FK to chat_sessions (CASCADE) |
-| `role` | TEXT | `system`, `user`, `assistant`, or `tool` |
-| `content` | TEXT | Message text |
-| `sources` | JSONB | Citation data |
-| `metadata` | JSONB | Pipeline metrics |
-| `tokens_used` | INTEGER | Token count |
-| `created_at` | TIMESTAMPTZ | Creation timestamp |
-
----
-
-## Environment Variables
-
-### Backend (`backend/.env`)
+**Backend (`backend/.env`)**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `SUPABASE_URL` | yes | Supabase project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | yes | Supabase anon/public key |
-| `OPENAI_API_KEY` | yes | OpenAI API key |
-| `PORT` | no | Server port (default: 3000) |
+| `SUPABASE_URL` | ✓ | Supabase project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | ✓ | Supabase anon key |
+| `OPENAI_API_KEY` | ✓ | OpenAI API key |
+| `LLM_MODEL` | — | Defaults to `gpt-4o-mini` |
+| `PORT` | — | Defaults to `3000` |
 
-### Frontend (`frontend/.env.local`)
+**Frontend (`frontend/.env.local`)**
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `BACKEND_URL` | no | Backend URL (default: `http://localhost:3000`) |
-| `PORT` | no | Frontend port (default: 3000) |
+| `BACKEND_URL` | — | Defaults to `http://localhost:3000` |
 
 ---
 
 ## Testing
 
 ```bash
-# Backend tests
 cd backend
-npm test              # Run all unit tests
-npm run test:watch    # Watch mode
-npm run test:cov      # Coverage report
-npm run test:e2e      # End-to-end tests
+npm test            # Unit tests (Jest)
+npm run test:cov    # Coverage report
+npm run test:e2e    # End-to-end tests
 ```
+
+Unit tests cover: `CitationService`, `ContextBuilderService`, `RetrievalValidatorService`, `VectorRetrieverService`, `TokenEstimatorService`.
 
 ---
 
-## Roadmap
+## Skills Demonstrated
 
-- [x] Frontend interface (Next.js with chat, documents, dashboard)
-- [ ] WebSocket streaming for real-time AI responses
-- [ ] Multi-source knowledge connectors (Slack, GitHub, incident reports)
-- [ ] Advanced retrieval: reranking, hybrid search (keyword + vector)
-- [ ] RAG evaluation system with quality metrics
-- [x] PDF upload via drag-and-drop or file picker (text extracted server-side)
-- [ ] Document upload supporting DOCX and other binary formats
-- [ ] Authentication and multi-tenancy
-- [ ] Rate limiting and usage analytics
+This project covers the full spectrum of what an AI Engineer or Backend Developer role requires in an AI-first stack:
+
+- **RAG architecture** — end-to-end pipeline design with retrieval validation, query rewriting, and confidence-aware generation
+- **Vector database** — pgvector with HNSW indexing, cosine similarity search via custom SQL RPC
+- **LLM integration** — OpenAI chat completions and embeddings, prompt engineering, token management
+- **LangChain** — `RecursiveCharacterTextSplitter` for semantic-aware chunking
+- **NestJS** — modular architecture, dependency injection, provider interfaces, DTO validation
+- **Next.js App Router** — file-based routing, server-side API proxy routes, client/server component separation
+- **TypeScript** — strict mode, interface-driven design, shared type contracts across frontend and backend
+- **Database design** — relational schema with JSONB metadata, cascade deletes, composite indexes
+- **React patterns** — custom hooks, controlled components, optimistic UI, streaming simulation
+- **Tailwind CSS v4** — dark theme via CSS custom properties, utility-first responsive layouts
