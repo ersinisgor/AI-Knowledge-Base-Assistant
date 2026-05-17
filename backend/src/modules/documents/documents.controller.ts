@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
+  Param,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -25,5 +27,11 @@ export class DocumentsController {
   @Get()
   async findAll(): Promise<DocumentResponseDto[]> {
     return this.documentsService.findAll();
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(@Param('id') id: string): Promise<void> {
+    return this.documentsService.delete(id);
   }
 }

@@ -35,20 +35,20 @@ export function SourceCard({ source, index, selected, onClick }: SourceCardProps
       <div className="flex justify-between items-center mb-1.5">
         <div className="flex items-center gap-1.5">
           <FileText className={cn('w-3 h-3', getSourceTypeColor(source.source_type))} />
-          <span className={cn('text-[11px] font-medium', getSourceTypeColor(source.source_type))}>
+          <span className={cn('text-base font-medium', getSourceTypeColor(source.source_type))}>
             {source.document_name}
           </span>
         </div>
-        <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-semibold', getSimilarityColor(source.similarity))}>
+        <span className={cn('px-1.5 py-0.5 rounded text-base font-semibold', getSimilarityColor(source.similarity))}>
           {Math.round(source.similarity * 100)}%
         </span>
       </div>
       {source.chunk_content && (
-        <div className="text-muted-foreground text-[11px] leading-relaxed mb-1.5 line-clamp-2">
+        <div className="text-muted-foreground text-base leading-relaxed mb-1.5 line-clamp-2">
           {source.chunk_content.substring(0, 150)}...
         </div>
       )}
-      <div className="flex gap-2 items-center text-muted-foreground text-[9px]">
+      <div className="flex gap-2 items-center text-muted-foreground text-base">
         <span>chunk {source.chunk_index}</span>
         <span className="text-border">·</span>
         <span>{source.source_type}</span>

@@ -31,12 +31,12 @@ export function ChatArea() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
         <div className="px-5 py-3 border-b border-border flex justify-between items-center">
-          <span className="text-foreground font-medium text-[13px]">
+          <span className="text-foreground font-medium text-base">
             {messages.length > 0 ? 'Conversation' : 'New Chat'}
           </span>
           <button
             onClick={() => setShowSources(!showSources)}
-            className="px-2.5 py-1 bg-card border border-border rounded-md text-muted-foreground text-[11px] flex items-center gap-1.5 hover:text-foreground transition-colors"
+            className="px-2.5 py-1 bg-card border border-border rounded-md text-muted-foreground text-base flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -83,8 +83,8 @@ export function ChatArea() {
                 </svg>
               </div>
               <div className="text-center">
-                <p className="text-foreground font-medium text-sm">Ask a question</p>
-                <p className="text-muted-foreground text-xs mt-1">Query your knowledge base for accurate, cited answers</p>
+                <p className="text-foreground font-medium text-base">Ask a question</p>
+                <p className="text-muted-foreground text-base mt-1">Query your knowledge base for accurate, cited answers</p>
               </div>
             </div>
           )}

@@ -8,11 +8,11 @@ export function SystemConfig() {
 
   return (
     <div className="border-t border-border pt-2 mt-2">
-      <div className="text-muted-foreground text-[9px] uppercase tracking-wider mb-1.5">System Config</div>
+      <div className="text-muted-foreground text-base uppercase tracking-wider mb-1.5">System Config</div>
       {config.map(({ label, value }) => (
         <div key={label} className="flex justify-between mt-0.5">
-          <span className="text-muted-foreground text-[10px]">{label}</span>
-          <span className="text-foreground text-[10px] font-medium">{value}</span>
+          <span className="text-muted-foreground text-base">{label}</span>
+          <span className="text-foreground text-base font-medium">{value}</span>
         </div>
       ))}
     </div>

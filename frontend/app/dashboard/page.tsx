@@ -16,8 +16,8 @@ export default function DashboardPage() {
   useEffect(() => {
     Promise.all([api.documents.list(), api.chat.getSessions()]).then(
       ([docs, sess]) => {
-        setDocuments(docs);
-        setSessions(sess);
+        setDocuments(Array.isArray(docs) ? docs : []);
+        setSessions(Array.isArray(sess) ? sess : []);
       }
     ).catch(() => {});
   }, []);

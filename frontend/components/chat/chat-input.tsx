@@ -32,7 +32,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             onChange={(e) => setValue(e.target.value)}
             placeholder="Ask a question about your knowledge base..."
             disabled={disabled}
-            className="flex-1 bg-transparent text-foreground text-[13px] placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+            className="flex-1 bg-transparent text-foreground text-base placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"

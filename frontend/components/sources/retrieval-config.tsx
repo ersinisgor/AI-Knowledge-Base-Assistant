@@ -10,14 +10,14 @@ export function RetrievalConfig({ metadata }: { metadata?: RetrievalMetadata }) 
 
   return (
     <div className="px-3.5 py-2.5 border-b border-border">
-      <div className="text-muted-foreground text-[9px] uppercase tracking-wider mb-2">
+      <div className="text-muted-foreground text-base uppercase tracking-wider mb-2">
         Retrieval Configuration
       </div>
       <div className="flex flex-col gap-1.5">
         {configEntries.map(({ label, value }) => (
           <div key={label} className="flex justify-between items-center">
-            <span className="text-muted-foreground text-[10px]">{label}</span>
-            <span className="text-foreground text-[10px] font-medium">{value}</span>
+            <span className="text-muted-foreground text-base">{label}</span>
+            <span className="text-foreground text-base font-medium">{value}</span>
           </div>
         ))}
       </div>

@@ -11,7 +11,7 @@ export function useSessions() {
   const fetchSessions = useCallback(async () => {
     try {
       const data = await api.chat.getSessions();
-      setSessions(data);
+      setSessions(Array.isArray(data) ? data : []);
     } catch {
       // Sessions are non-critical, silently fail
     } finally {
