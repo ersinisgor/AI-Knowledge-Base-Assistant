@@ -6,5 +6,5 @@ export default async function ChatPage({
   searchParams: Promise<{ session?: string }>;
 }) {
   const { session } = await searchParams;
-  return <ChatArea sessionId={session} />;
+  return <ChatArea key={session ?? 'new'} sessionId={session} />;
 }
