@@ -21,6 +21,9 @@ export function useSessions() {
 
   useEffect(() => {
     fetchSessions();
+
+    window.addEventListener('chat:session-created', fetchSessions);
+    return () => window.removeEventListener('chat:session-created', fetchSessions);
   }, [fetchSessions]);
 
   return { sessions, loading, refetch: fetchSessions };
