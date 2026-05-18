@@ -17,6 +17,7 @@ export function ChatArea({ sessionId }: ChatAreaProps) {
   const {
     messages,
     isLoading,
+    sessionLoadError,
     streamingContent,
     lastResponse,
     sendMessage,
@@ -78,8 +79,25 @@ export function ChatArea({ sessionId }: ChatAreaProps) {
             <StreamingIndicator content={streamingContent} onStop={stopGeneration} />
           )}
 
+          {/* Session load error */}
+          {sessionLoadError && messages.length === 0 && !isLoading && (
+            <div className="h-full flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-red-400" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-foreground font-medium text-base">Could not load conversation</p>
+                <p className="text-muted-foreground text-base mt-1">{sessionLoadError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Empty state */}
-          {messages.length === 0 && !isLoading && (
+          {messages.length === 0 && !isLoading && !sessionLoadError && (
             <div className="h-full flex flex-col items-center justify-center gap-3">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-primary" strokeWidth="1.5">

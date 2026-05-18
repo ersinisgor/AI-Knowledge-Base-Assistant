@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 export function useChat(initialSessionId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionLoadError, setSessionLoadError] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -17,16 +18,25 @@ export function useChat(initialSessionId?: string) {
     setMessages([]);
     setStreamingContent('');
     setLastResponse(null);
+    setSessionLoadError(null);
 
     if (!initialSessionId) return;
 
     setIsLoading(true);
     fetch(`/api/sessions/${initialSessionId}`)
-      .then((res) => res.json())
-      .then((data: ChatMessage[]) => {
-        if (Array.isArray(data)) setMessages(data);
+      .then(async (res) => {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else {
+          console.error('[useChat] Unexpected session response:', data);
+          setSessionLoadError(data?.message || 'Failed to load conversation history');
+        }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[useChat] Session fetch error:', err);
+        setSessionLoadError('Could not connect to load conversation history');
+      })
       .finally(() => setIsLoading(false));
   }, [initialSessionId]);
 
@@ -96,6 +106,7 @@ export function useChat(initialSessionId?: string) {
   return {
     messages,
     isLoading,
+    sessionLoadError,
     streamingContent,
     lastResponse,
     sessionId: sessionIdRef.current,
