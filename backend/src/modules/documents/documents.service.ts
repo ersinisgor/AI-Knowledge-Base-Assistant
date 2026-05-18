@@ -78,6 +78,28 @@ export class DocumentsService {
     return documentsWithStats;
   }
 
+  async findOne(id: string): Promise<DocumentResponseDto> {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      throw new NotFoundException(`Document ${id} not found`);
+    }
+
+    const doc = data as DocumentRow;
+    return {
+      id: doc.id,
+      content: doc.content,
+      source_type: doc.source_type,
+      metadata: (doc.metadata || {}) as Record<string, unknown>,
+      created_at: doc.created_at ?? '',
+      status: 'indexed' as const,
+    };
+  }
+
   async delete(id: string): Promise<void> {
     const supabase = this.supabaseService.getClient();
 

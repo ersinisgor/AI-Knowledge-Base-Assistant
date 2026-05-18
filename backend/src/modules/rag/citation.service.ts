@@ -11,15 +11,17 @@ export class CitationService {
     const citations: SourceCitation[] = [];
 
     for (const chunk of chunks) {
-      const docName = (chunk.metadata.source as string) || (chunk.metadata.fileName as string) || 'Unknown';
+      const docName = (chunk.metadata.source as string) || 'Unknown';
       if (seen.has(docName)) continue;
       seen.add(docName);
 
       citations.push({
+        document_id: chunk.document_id,
         document_name: docName,
         source_type: (chunk.metadata.type as string) || 'unknown',
         similarity: chunk.similarity,
         chunk_index: (chunk.metadata.chunkIndex as number) ?? 0,
+        chunk_content: chunk.content,
       });
     }
 

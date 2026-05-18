@@ -45,7 +45,7 @@ export const api = {
   },
 
   ingestion: {
-    process(data: { content: string; source_type: string; fileName?: string; metadata?: Record<string, unknown> }): Promise<IngestResponse> {
+    process(data: { content: string; source_type: string; metadata?: Record<string, unknown> }): Promise<IngestResponse> {
       return fetchAPI('/ingestion', {
         method: 'POST',
         body: JSON.stringify(data),

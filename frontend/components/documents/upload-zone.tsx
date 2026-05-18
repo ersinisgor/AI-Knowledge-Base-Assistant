@@ -5,25 +5,30 @@ import { Upload } from 'lucide-react';
 
 interface UploadZoneProps {
   onUpload: (file: File) => Promise<unknown>;
+  onError?: (message: string) => void;
 }
 
-export function UploadZone({ onUpload }: UploadZoneProps) {
+export function UploadZone({ onUpload, onError }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
       setIsUploading(true);
+      setErrorMsg(null);
       try {
         await onUpload(file);
       } catch (err) {
-        console.error('Upload failed:', err);
+        const msg = err instanceof Error ? err.message : 'Upload failed';
+        setErrorMsg(msg);
+        onError?.(msg);
       } finally {
         setIsUploading(false);
       }
     },
-    [onUpload]
+    [onUpload, onError]
   );
 
   const handleDrop = useCallback(
@@ -51,6 +56,9 @@ export function UploadZone({ onUpload }: UploadZoneProps) {
         {isUploading ? 'Uploading...' : 'Drop files here or click to upload'}
       </div>
       <div className="text-muted-foreground text-base">PDF, Markdown, Text — max 10MB</div>
+      {errorMsg && (
+        <div className="mt-2 text-base text-destructive font-medium">{errorMsg}</div>
+      )}
       <input
         ref={inputRef}
         type="file"

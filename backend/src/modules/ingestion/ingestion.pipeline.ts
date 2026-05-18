@@ -154,9 +154,11 @@ export class IngestionPipeline {
     chunk: Chunk,
   ): Record<string, unknown> {
     return {
-      source: (input.metadata?.source as string) || 'unknown',
+      source:
+        (input.metadata?.source as string) ||
+        (input.metadata?.fileName as string) ||
+        '',
       type: input.source_type,
-      fileName: input.fileName || '',
       chunkIndex: chunk.index,
     };
   }
