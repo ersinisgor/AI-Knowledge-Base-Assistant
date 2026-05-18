@@ -42,7 +42,6 @@ export function useDocuments() {
         const result = await api.ingestion.process({
           content,
           source_type: 'markdown',
-          fileName: file.name,
           metadata: { fileName: file.name },
         });
         await fetchDocuments();

@@ -29,6 +29,11 @@ export class DocumentsController {
     return this.documentsService.findAll();
   }
 
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<DocumentResponseDto> {
+    return this.documentsService.findOne(id);
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
