@@ -56,7 +56,7 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
 
   return (
     <div className="bg-card rounded-lg border border-border overflow-hidden">
-      <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr_2rem] px-3.5 py-2 border-b border-border text-muted-foreground text-base uppercase tracking-wider">
+      <div className="grid grid-cols-[minmax(0,2fr)_1.5fr_1fr_1fr_0.8fr_2rem] px-3.5 py-2 border-b border-border text-muted-foreground text-base uppercase tracking-wider">
         <span>Document</span>
         <span>Ingestion Progress</span>
         <span>Status</span>
@@ -68,10 +68,10 @@ export function DocumentList({ documents, onDelete }: DocumentListProps) {
       {documents.map((doc) => (
         <div
           key={doc.id}
-          className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.8fr_2rem] px-3.5 py-2.5 border-b border-border last:border-b-0 items-center"
+          className="grid grid-cols-[minmax(0,2fr)_1.5fr_1fr_1fr_0.8fr_2rem] px-3.5 py-2.5 border-b border-border last:border-b-0 items-center"
         >
-          <div className="flex items-center gap-2">
-            <FileText className={cn('w-3.5 h-3.5', getSourceTypeColor(doc.source_type))} />
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className={cn('w-3.5 h-3.5 shrink-0', getSourceTypeColor(doc.source_type))} />
             <span className="text-foreground text-base truncate">{doc.metadata?.fileName as string || `document-${doc.id.slice(0, 8)}`}</span>
           </div>
           <IngestionProgress status={doc.status} />

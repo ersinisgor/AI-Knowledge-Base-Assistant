@@ -379,8 +379,9 @@ The frontend is a Next.js 16 App Router application with three pages. It communi
 
 ### Chat Page (`/`)
 
-- `useChat` custom hook manages the full message lifecycle: sending, optimistic UI update, streaming simulation (character-by-character reveal at 15ms intervals), session ID persistence across turns, and error recovery
-- `SourcesPanel` renders alongside chat — shows retrieval configuration, per-source similarity scores with color-coded confidence (green ≥ 85%, amber ≥ 70%, red below), and opens a `Sheet` drawer for chunk-level preview; clicking "View full document" fetches the complete source document via `GET /api/documents/:id` and displays it inline with a back button
+- `useChat` custom hook manages the full message lifecycle: sending, optimistic UI update, streaming simulation (character-by-character reveal at 15ms intervals), session ID persistence across turns, history loading from `?session=<id>`, and error recovery
+- Sidebar `Recents` section lists the 8 most recent sessions via `useSessions`; clicking any entry navigates to `/?session=<id>` and reloads the full conversation history
+- `SourcesPanel` renders alongside chat — shows retrieval configuration, per-source similarity scores with color-coded confidence (green ≥ 85%, amber ≥ 70%, red below), and opens a `Sheet` drawer for chunk-level preview
 - `QueryTransformation` surfaces the rewritten query when it differs from the original input — provides transparency into the retrieval process
 - `ConfidenceWarning` renders an amber alert when `retrieval_confidence === 'low'`
 
