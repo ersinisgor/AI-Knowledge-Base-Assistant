@@ -327,10 +327,12 @@ Content-Type: application/json
   "answer": "According to the Q3 Operations Report, the refund rate was 3.2%...",
   "sources": [
     {
+      "document_id": "3f2e1a...",
       "document_name": "q3-ops-report.pdf",
       "source_type": "pdf",
       "similarity": 0.924,
-      "chunk_index": 7
+      "chunk_index": 7,
+      "chunk_content": "The Q3 refund rate was 3.2%, down from 4.1% in Q2..."
     }
   ],
   "session_id": "uuid",
@@ -353,6 +355,7 @@ Content-Type: application/json
 ```http
 GET    /documents        # List all documents with chunk_count and status
 POST   /documents        # Create document record (without ingestion)
+GET    /documents/:id    # Fetch a single document by UUID (content + metadata)
 DELETE /documents/:id    # Delete document and all its chunks → 204 No Content
 GET    /chat/sessions    # List recent chat sessions
 ```
@@ -384,7 +387,7 @@ The frontend is a Next.js 16 App Router application with three pages. It communi
 
 ### Documents Page (`/documents`)
 
-- `UploadZone` handles both click-to-browse and drag-and-drop; PDF files are sent as `multipart/form-data` to `/api/upload-pdf` (server-side text extraction via `pdf-parse`), while Markdown and plain text files are read client-side with `file.text()`
+- `UploadZone` handles both click-to-browse and drag-and-drop; PDF files are sent as `multipart/form-data` to `/api/upload-pdf` (server-side text extraction via `pdf-parse`), while Markdown and plain text files are read client-side with `file.text()`; upload errors are displayed inline in the zone rather than silently swallowed
 - `IngestionProgress` renders a five-segment bar (uploaded → parsing → chunking → embedding → indexed) with amber pulse animation on the active stage
 - `useDocuments` refetches the document list after each upload or delete so the table stays current without a manual refresh
 - Each row in the document table has a trash icon button; clicking it calls `DELETE /api/documents/:id`, which proxies to the backend and removes both the document and all its associated chunks
@@ -454,6 +457,10 @@ The frontend is a Next.js 16 App Router application with three pages. It communi
 │       ├── types.ts                 # Shared TypeScript interfaces (mirror backend DTOs)
 │       └── utils.ts                 # cn() — clsx + tailwind-merge
 │
+├── scripts/
+│   └── test-data/                   # 13 .md files + 2 PDFs for manual upload via UI
+│       └── test-questions.md        # Curated test questions organized by topic
+│
 └── supabase/
     └── migrations/                  # 001–005: tables, extensions, indexes, RPC function
 ```
@@ -501,16 +508,58 @@ npm install
 npm run dev           # Starts on port 3001
 ```
 
+### Sample Test Data
+
+The `scripts/test-data/` directory contains 13 Markdown files and 2 PDF files that cover a fictional company's engineering handbook, architecture docs, Slack discussions, GitHub commits, incident reports, and KPI reports. Upload them via the Documents page UI to populate the knowledge base and test cross-document retrieval.
+
+**Markdown files** — uploaded as text, ingested directly:
+
+| File | Contents |
+|------|----------|
+| `engineering-handbook.md` | Architecture, auth, deployment, coding standards |
+| `product-requirements.md` | Notifications, AI Assistant, Analytics PRD |
+| `system-architecture.md` | RAG pipeline, token budget, component breakdown |
+| `backend-guidelines.md` | Module structure, DTO, logging, testing rules |
+| `api-reference.md` | All API endpoints and usage |
+| `database-schema.md` | Table schemas and indexes |
+| `backend-team-slack.md` | JWT bug, RAG accuracy, DB pool discussions |
+| `product-team-slack.md` | Notifications, AI assistant roadmap discussions |
+| `github-commits.md` | 7 commits: JWT fix, WebSocket, chunking, rate limiting |
+| `incident-api-downtime.md` | P1 — DB connection pool exhaustion (45 min outage) |
+| `incident-migration-failure.md` | P2 — Migration failure and rollback |
+| `product-roadmap.md` | Q1–Q4 2025 feature plan |
+| `kpi-report-january-2025.md` | MAU, revenue, performance metrics |
+
+**PDF files** — text extracted server-side via `pdf-parse`:
+
+| File | Contents |
+|------|----------|
+| `Security Policy — TechNova Solutions.pdf` | Auth rules, password policy, API security, compliance |
+| `Onboarding Guide — Backend Engineer — TechNova Solutions.pdf` | Day-by-day onboarding plan, key contacts, useful links |
+
+**Test questions:** `scripts/test-data/test-questions.md` contains a full set of questions organized by topic and difficulty, including cross-document retrieval scenarios that require combining information from multiple sources.
+
+A curated set of test questions is available in `scripts/test-data/test-questions.md`, organized by topic (engineering, incidents, onboarding, security, cross-document retrieval). Some highlights:
+
+| Question | What to verify |
+|----------|---------------|
+| `Why was the connection pool size changed?` | Cross-document retrieval (Slack + incident report + GitHub commit) |
+| `What is the JWT access token expiry?` | Single-source precision |
+| `Who worked on the WebSocket feature?` | Commit history retrieval |
+| `What are the Q2 roadmap items?` | Product document retrieval |
+| `What is the account lockout policy?` | PDF retrieval (Security Policy) |
+| `What should a new engineer do on day 1?` | PDF retrieval (Onboarding Guide) |
+
 ### Quick Smoke Test
 
 ```bash
 # 1. Ingest a document
-curl -X POST http://localhost:3000/ingestion/upload \
+curl -X POST http://localhost:3000/ingestion/process \
   -H "Content-Type: application/json" \
   -d '{
     "content": "Remote work is allowed up to 3 days per week for all full-time employees.",
     "source_type": "markdown",
-    "fileName": "remote-work-policy.md"
+    "metadata": { "fileName": "remote-work-policy.md" }
   }'
 
 # 2. Query it
