@@ -9,7 +9,11 @@ import { QueryTransformation } from './query-transformation';
 import { StreamingIndicator } from './streaming-indicator';
 import { SourcesPanel } from '@/components/sources/sources-panel';
 
-export function ChatArea() {
+interface ChatAreaProps {
+  sessionId?: string;
+}
+
+export function ChatArea({ sessionId }: ChatAreaProps) {
   const {
     messages,
     isLoading,
@@ -17,7 +21,7 @@ export function ChatArea() {
     lastResponse,
     sendMessage,
     stopGeneration,
-  } = useChat();
+  } = useChat(sessionId);
 
   const [showSources, setShowSources] = useState(true);
   const [selectedSourceIndex, setSelectedSourceIndex] = useState<number | null>(null);

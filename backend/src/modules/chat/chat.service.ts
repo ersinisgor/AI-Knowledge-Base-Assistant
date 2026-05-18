@@ -106,6 +106,26 @@ export class ChatService {
     };
   }
 
+  async getSessionMessages(sessionId: string) {
+    const { data, error } = await this.supabaseService.getClient()
+      .from('messages')
+      .select('role, content, sources, metadata, tokens_used, created_at')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch messages: ${error.message}`);
+    }
+
+    return (data as MessageRow[]).map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+      sources: (m.sources as unknown[]) ?? undefined,
+      retrieval_confidence: (m.metadata?.retrieval_confidence as string) ?? undefined,
+      tokens_used: m.tokens_used ?? undefined,
+    }));
+  }
+
   async getSessions() {
     const { data, error } = await this.supabaseService.getClient()
       .from('chat_sessions')

@@ -17,7 +17,7 @@ export function Sidebar() {
   const { sessions } = useSessions();
 
   return (
-    <div className="w-[220px] bg-sidebar border-r border-sidebar-border flex flex-col h-full shrink-0">
+    <div className="w-[400px] bg-sidebar border-r border-sidebar-border flex flex-col h-full shrink-0">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-sidebar-border flex items-center gap-2.5">
         <div className="w-[30px] h-[30px] bg-primary rounded-[7px] flex items-center justify-center">

@@ -1,5 +1,10 @@
 import { ChatArea } from '@/components/chat/chat-area';
 
-export default function ChatPage() {
-  return <ChatArea />;
+export default async function ChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string }>;
+}) {
+  const { session } = await searchParams;
+  return <ChatArea sessionId={session} />;
 }

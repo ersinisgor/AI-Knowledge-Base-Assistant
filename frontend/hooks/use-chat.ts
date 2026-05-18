@@ -1,16 +1,34 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import type { ChatMessage, ChatResponse, SourceCitation } from '@/lib/types';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import type { ChatMessage, ChatResponse } from '@/lib/types';
 import { api } from '@/lib/api';
 
-export function useChat() {
+export function useChat(initialSessionId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const sessionIdRef = useRef<string | undefined>(undefined);
+  const sessionIdRef = useRef<string | undefined>(initialSessionId);
+
+  useEffect(() => {
+    sessionIdRef.current = initialSessionId;
+    setMessages([]);
+    setStreamingContent('');
+    setLastResponse(null);
+
+    if (!initialSessionId) return;
+
+    setIsLoading(true);
+    fetch(`/api/sessions/${initialSessionId}`)
+      .then((res) => res.json())
+      .then((data: ChatMessage[]) => {
+        if (Array.isArray(data)) setMessages(data);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [initialSessionId]);
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = { role: 'user', content };
@@ -20,11 +38,15 @@ export function useChat() {
     setLastResponse(null);
 
     try {
+      const isNewSession = !sessionIdRef.current;
       const response = await api.chat.send(content, sessionIdRef.current);
       sessionIdRef.current = response.session_id;
       setLastResponse(response);
 
-      // Simulate streaming by revealing the answer character by character
+      if (isNewSession) {
+        window.dispatchEvent(new CustomEvent('chat:session-created'));
+      }
+
       const fullText = response.answer;
       let revealed = '';
       for (let i = 0; i < fullText.length; i++) {
