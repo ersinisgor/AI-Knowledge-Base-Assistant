@@ -52,11 +52,14 @@ export class ChatService {
     }
 
     // 2. Store user message
-    await supabase.from('messages').insert({
+    const { error: userMsgError } = await supabase.from('messages').insert({
       session_id: sessionId,
       role: 'user',
       content: dto.message,
     });
+    if (userMsgError) {
+      this.logger.error(`Failed to store user message: ${userMsgError.message}`);
+    }
 
     // 3. Load recent message history (last 10)
     const { data: historyData } = await supabase
@@ -84,7 +87,7 @@ export class ChatService {
     });
 
     // 5. Store assistant response
-    await supabase.from('messages').insert({
+    const { error: assistantMsgError } = await supabase.from('messages').insert({
       session_id: sessionId,
       role: 'assistant',
       content: pipelineResult.answer,
@@ -95,6 +98,9 @@ export class ChatService {
         retrieval_confidence: pipelineResult.retrievalConfidence,
       },
     });
+    if (assistantMsgError) {
+      this.logger.error(`Failed to store assistant message: ${assistantMsgError.message}`);
+    }
 
     // 6. Return response
     return {

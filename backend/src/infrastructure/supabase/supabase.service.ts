@@ -9,15 +9,21 @@ export class SupabaseService {
 
   constructor(private readonly configService: ConfigService) {
     const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
-    const supabaseKey = this.configService.get<string>(
-      'SUPABASE_PUBLISHABLE_KEY',
-    );
+    // Prefer service role key (bypasses RLS for server-side operations).
+    // Falls back to the anon key for local dev setups that omit the service key.
+    const supabaseKey =
+      this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY') ||
+      this.configService.get<string>('SUPABASE_PUBLISHABLE_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and PUBLISHABLE_KEY must be provided');
+      throw new Error(
+        'Supabase URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_PUBLISHABLE_KEY) must be provided',
+      );
     }
 
-    this.client = createClient(supabaseUrl, supabaseKey);
+    this.client = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    });
   }
 
   getClient(): SupabaseClient<Database> {
