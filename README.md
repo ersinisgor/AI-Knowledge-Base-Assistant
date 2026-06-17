@@ -550,6 +550,79 @@ A curated set of test questions is available in `scripts/test-data/test-question
 | `What is the account lockout policy?` | PDF retrieval (Security Policy) |
 | `What should a new engineer do on day 1?` | PDF retrieval (Onboarding Guide) |
 
+### Demo Dataset — TechNova Solutions
+
+The `data/` directory contains a ready-to-use fake company dataset for demonstrating and testing the platform. It covers a fictional SaaS company (TechNova Solutions) with engineering docs, Slack conversations, GitHub history, and incident reports.
+
+```
+data/
+  pdfs/               ← Convert to PDF via Google Docs (see instructions below)
+    engineering_handbook.md
+    product_requirements.md
+    security_policy.md
+  markdown/           ← Upload directly as .md files
+    architecture.md
+    backend-guidelines.md
+    database-schema.md
+    roadmap.md
+  chat_logs/          ← Upload directly as .md files
+    backend-team.md
+    product-team.md
+  github/             ← Upload directly as .md files
+    commits.md
+  incidents/          ← Upload directly as .md files
+    api-downtime.md
+```
+
+#### Step 1 — Convert PDFs
+
+These 3 files must be converted to PDF before uploading (Google Docs → File → Download → PDF):
+
+| File | How |
+|------|-----|
+| `data/pdfs/engineering_handbook.md` | Open in Google Docs → Download as PDF |
+| `data/pdfs/product_requirements.md` | Open in Google Docs → Download as PDF |
+| `data/pdfs/security_policy.md` | Open in Google Docs → Download as PDF |
+
+#### Step 2 — Upload all files
+
+Go to the **Documents** page, drag-and-drop or click to upload:
+- The 3 PDF files you downloaded
+- All 8 `.md` files from `markdown/`, `chat_logs/`, `github/`, and `incidents/`
+
+#### Step 3 — Test with sample questions
+
+Once all 11 documents are uploaded and indexed, try these questions in the **Chat** page:
+
+**Authentication & Security**
+- *"What is the JWT access token expiry time?"*
+- *"What happens after 5 failed login attempts?"*
+- *"What algorithm is used to sign JWT tokens?"*
+- *"How long does a password reset link stay valid?"*
+
+**Architecture & Engineering**
+- *"How does the RAG pipeline work step by step?"*
+- *"What is the token budget for retrieved chunks?"*
+- *"What is the modular architecture pattern used in the backend?"*
+- *"What database indexes exist on the document_chunks table?"*
+
+**Incidents & Operations**
+- *"What caused the API downtime in February 2025?"*
+- *"How was the database connection pool issue fixed?"*
+- *"What is the on-call response time for P1 incidents?"*
+
+**Product & Roadmap**
+- *"What real-time notification events are supported?"*
+- *"What is planned for Q2 2025?"*
+- *"What languages will be supported in Q2?"*
+- *"What are the performance SLA targets for the API?"*
+
+**Cross-document retrieval** (these require combining multiple sources — best for demonstrating RAG power):
+- *"Why was the refresh token duration extended to 14 days?"* — combines engineering_handbook + backend-team Slack + GitHub commits
+- *"Who worked on the WebSocket notification feature and when was it merged?"* — combines product-team Slack + GitHub commits
+- *"What steps were taken after the API downtime and what monitoring was added?"* — combines incident report + backend-team Slack + GitHub commits
+- *"What is the confidence scoring system for AI answers and why was it added?"* — combines architecture + product_requirements
+
 ### Quick Smoke Test
 
 ```bash
