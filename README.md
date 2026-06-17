@@ -508,120 +508,86 @@ npm install
 npm run dev           # Starts on port 3001
 ```
 
-### Sample Test Data
-
-The `scripts/test-data/` directory contains 13 Markdown files and 2 PDF files that cover a fictional company's engineering handbook, architecture docs, Slack discussions, GitHub commits, incident reports, and KPI reports. Upload them via the Documents page UI to populate the knowledge base and test cross-document retrieval.
-
-**Markdown files** — uploaded as text, ingested directly:
-
-| File | Contents |
-|------|----------|
-| `engineering-handbook.md` | Architecture, auth, deployment, coding standards |
-| `product-requirements.md` | Notifications, AI Assistant, Analytics PRD |
-| `system-architecture.md` | RAG pipeline, token budget, component breakdown |
-| `backend-guidelines.md` | Module structure, DTO, logging, testing rules |
-| `api-reference.md` | All API endpoints and usage |
-| `database-schema.md` | Table schemas and indexes |
-| `backend-team-slack.md` | JWT bug, RAG accuracy, DB pool discussions |
-| `product-team-slack.md` | Notifications, AI assistant roadmap discussions |
-| `github-commits.md` | 7 commits: JWT fix, WebSocket, chunking, rate limiting |
-| `incident-api-downtime.md` | P1 — DB connection pool exhaustion (45 min outage) |
-| `incident-migration-failure.md` | P2 — Migration failure and rollback |
-| `product-roadmap.md` | Q1–Q4 2025 feature plan |
-| `kpi-report-january-2025.md` | MAU, revenue, performance metrics |
-
-**PDF files** — text extracted server-side via `pdf-parse`:
-
-| File | Contents |
-|------|----------|
-| `Security Policy — TechNova Solutions.pdf` | Auth rules, password policy, API security, compliance |
-| `Onboarding Guide — Backend Engineer — TechNova Solutions.pdf` | Day-by-day onboarding plan, key contacts, useful links |
-
-**Test questions:** `scripts/test-data/test-questions.md` contains a full set of questions organized by topic and difficulty, including cross-document retrieval scenarios that require combining information from multiple sources.
-
-A curated set of test questions is available in `scripts/test-data/test-questions.md`, organized by topic (engineering, incidents, onboarding, security, cross-document retrieval). Some highlights:
-
-| Question | What to verify |
-|----------|---------------|
-| `Why was the connection pool size changed?` | Cross-document retrieval (Slack + incident report + GitHub commit) |
-| `What is the JWT access token expiry?` | Single-source precision |
-| `Who worked on the WebSocket feature?` | Commit history retrieval |
-| `What are the Q2 roadmap items?` | Product document retrieval |
-| `What is the account lockout policy?` | PDF retrieval (Security Policy) |
-| `What should a new engineer do on day 1?` | PDF retrieval (Onboarding Guide) |
-
 ### Demo Dataset — TechNova Solutions
 
-The `data/` directory contains a ready-to-use fake company dataset for demonstrating and testing the platform. It covers a fictional SaaS company (TechNova Solutions) with engineering docs, Slack conversations, GitHub history, and incident reports.
+`scripts/test-data/` contains 15 ready-to-use documents covering a fictional SaaS company (TechNova Solutions). Upload them all via the Documents page to populate the knowledge base and test cross-document retrieval.
 
-```
-data/
-  pdfs/               ← Convert to PDF via Google Docs (see instructions below)
-    engineering_handbook.md
-    product_requirements.md
-    security_policy.md
-  markdown/           ← Upload directly as .md files
-    architecture.md
-    backend-guidelines.md
-    database-schema.md
-    roadmap.md
-  chat_logs/          ← Upload directly as .md files
-    backend-team.md
-    product-team.md
-  github/             ← Upload directly as .md files
-    commits.md
-  incidents/          ← Upload directly as .md files
-    api-downtime.md
-```
+**Upload directly** — drag-and-drop as `.md` files:
 
-#### Step 1 — Convert PDFs
+| File | Contents |
+|------|----------|
+| `engineering-handbook.md` | Architecture, auth (JWT, RS256), deployment, coding standards, on-call policy |
+| `system-architecture.md` | RAG pipeline steps, token budgets, WebSocket gateway, ingestion pipeline |
+| `product-requirements.md` | Real-time notifications PRD, AI Assistant requirements, performance SLAs |
+| `backend-guidelines.md` | Module structure, DTO rules, error handling, logging, testing targets |
+| `api-reference.md` | All API endpoints (auth, documents, ingestion, chat) with request/response shapes |
+| `database-schema.md` | All table schemas, column types, indexes, FK constraints |
+| `product-roadmap.md` | Q1–Q3 2025 features: AI MVP, notifications, analytics, multi-language, GitHub sync |
+| `kpi-report-january-2025.md` | MAU 12,450, MRR $124.5k, p99 latency 280ms, test coverage 84% |
+| `backend-team-slack.md` | JWT bug discussion, refresh token rotation, DB pool exhaustion alert |
+| `product-team-slack.md` | WebSocket notifications decision, AI confidence UX feedback, multi-language priority |
+| `github-commits.md` | 9 commits: JWT fix, WebSocket, RAG accuracy, token budget, query rewriting |
+| `incident-api-downtime.md` | P1 — DB pool exhausted, 45 min outage, pool 10→30, Datadog alert added |
+| `incident-migration-failure.md` | P2 — Migration failed (chunk_index column conflict), rollback, IF NOT EXISTS fix |
 
-These 3 files must be converted to PDF before uploading (Google Docs → File → Download → PDF):
+**Already PDF** — upload as-is:
 
-| File | How |
-|------|-----|
-| `data/pdfs/engineering_handbook.md` | Open in Google Docs → Download as PDF |
-| `data/pdfs/product_requirements.md` | Open in Google Docs → Download as PDF |
-| `data/pdfs/security_policy.md` | Open in Google Docs → Download as PDF |
+| File | Contents |
+|------|----------|
+| `Security Policy — TechNova Solutions.pdf` | Auth rules, password policy (bcrypt/12 rounds), rate limiting, incident handling |
+| `Onboarding Guide — Backend Engineer — TechNova Solutions.pdf` | Day-by-day onboarding plan, key contacts, useful links |
 
-#### Step 2 — Upload all files
+---
 
-Go to the **Documents** page, drag-and-drop or click to upload:
-- The 3 PDF files you downloaded
-- All 8 `.md` files from `markdown/`, `chat_logs/`, `github/`, and `incidents/`
+### Sample Questions
 
-#### Step 3 — Test with sample questions
+Once all 15 documents are uploaded and indexed, use these questions in the **Chat** page to test the platform:
 
-Once all 11 documents are uploaded and indexed, try these questions in the **Chat** page:
-
-**Authentication & Security**
+**Authentication & Security** *(Engineering Handbook + Security Policy PDF)*
 - *"What is the JWT access token expiry time?"*
-- *"What happens after 5 failed login attempts?"*
-- *"What algorithm is used to sign JWT tokens?"*
-- *"How long does a password reset link stay valid?"*
+- *"What algorithm is used to sign JWT tokens and why not HS256?"*
+- *"What happens after 5 consecutive failed login attempts?"*
+- *"How many bcrypt rounds are used for password hashing?"*
 
-**Architecture & Engineering**
+**Architecture & Engineering** *(System Architecture + Backend Guidelines)*
 - *"How does the RAG pipeline work step by step?"*
-- *"What is the token budget for retrieved chunks?"*
-- *"What is the modular architecture pattern used in the backend?"*
-- *"What database indexes exist on the document_chunks table?"*
+- *"What is the token budget for each section of the context window?"*
+- *"What vector index is used on document_chunks and what are its parameters?"*
+- *"What rules apply when writing a new NestJS module?"*
 
-**Incidents & Operations**
-- *"What caused the API downtime in February 2025?"*
-- *"How was the database connection pool issue fixed?"*
-- *"What is the on-call response time for P1 incidents?"*
+**API & Database** *(API Reference + Database Schema)*
+- *"What does the POST /ingestion/process endpoint do internally?"*
+- *"What columns does the document_chunks table have?"*
+- *"How is pagination handled on the GET /documents endpoint?"*
 
-**Product & Roadmap**
-- *"What real-time notification events are supported?"*
-- *"What is planned for Q2 2025?"*
-- *"What languages will be supported in Q2?"*
-- *"What are the performance SLA targets for the API?"*
+**Product & Roadmap** *(Product Requirements + Roadmap)*
+- *"What notification events are supported in real-time?"*
+- *"What is the AI assistant's behavior when retrieval confidence is low?"*
+- *"What features are planned for Q3 2025?"*
 
-**Cross-document retrieval** (these require combining multiple sources — best for demonstrating RAG power):
-- *"Why was the refresh token duration extended to 14 days?"* — combines engineering_handbook + backend-team Slack + GitHub commits
-- *"Who worked on the WebSocket notification feature and when was it merged?"* — combines product-team Slack + GitHub commits
-- *"What steps were taken after the API downtime and what monitoring was added?"* — combines incident report + backend-team Slack + GitHub commits
-- *"What is the confidence scoring system for AI answers and why was it added?"* — combines architecture + product_requirements
+**Incidents & Operations** *(Incident Reports + Slack)*
+- *"What caused the API downtime on February 1st 2025?"*
+- *"What was the root cause of the data migration failure?"*
+- *"Who was the incident commander for the P2 migration incident?"*
+
+**Business Metrics** *(KPI Report)*
+- *"What was the MAU in January 2025 and how did it change month-over-month?"*
+- *"What is the system uptime and error rate?"*
+- *"How many AI assistant queries were made in January 2025?"*
+
+**Onboarding** *(Onboarding Guide PDF)*
+- *"What should a new backend engineer do on day 1?"*
+- *"Who is the engineering lead and how do I contact them?"*
+
+**Cross-document retrieval** — these require the RAG system to combine multiple sources, making them the best demonstration of retrieval quality:
+
+| Question | Sources combined |
+|----------|-----------------|
+| *"Why was the refresh token duration changed and who made the code change?"* | backend-team-slack + github-commits + engineering-handbook |
+| *"What monitoring was added after the API downtime and what triggered the incident?"* | incident-api-downtime + backend-team-slack + github-commits |
+| *"What did the team ship in January 2025 and how did it impact KPIs?"* | github-commits + product-team-slack + kpi-report |
+| *"What security measures protect the JWT authentication system?"* | engineering-handbook + security-policy + backend-team-slack |
+| *"What lessons from the migration failure should inform future database changes?"* | incident-migration-failure + backend-guidelines + database-schema |
 
 ### Quick Smoke Test
 
