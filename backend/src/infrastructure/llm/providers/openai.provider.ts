@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import { ILLMProvider, ChatMessage, LLMOptions, LLMResponse } from './llm-provider.interface';
+import {
+  ILLMProvider,
+  ChatMessage,
+  LLMOptions,
+  LLMResponse,
+} from './llm-provider.interface';
 
 @Injectable()
 export class OpenAIProvider implements ILLMProvider {
@@ -16,10 +21,14 @@ export class OpenAIProvider implements ILLMProvider {
     }
 
     this.client = new OpenAI({ apiKey });
-    this.defaultModel = this.configService.get<string>('LLM_MODEL') || 'gpt-4o-mini';
+    this.defaultModel =
+      this.configService.get<string>('LLM_MODEL') || 'gpt-4o-mini';
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
     const model = options?.model || this.defaultModel;
 
     this.logger.debug(`Calling OpenAI chat with model: ${model}`);
